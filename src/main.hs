@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import Control.Exception.Base
@@ -6,8 +7,10 @@ import Data.List
 import Data.Either.Utils
 import Data.Maybe
 import Data.ConfigFile
+import Data.Text (unpack)
 import System.Environment
 import System.Directory
+import System.REPL
 import Network.HTTP
 import Text.XML.Light.Input
 import Text.XML.Light.Types
@@ -76,19 +79,24 @@ get_string item = do
   l <- get_link  $ elContent item
   return $ t ++ " " ++ l
 
+cmd podcasts = makeCommand "get_list" ("get_list" ==) "description"
+  (\t -> 
+     msum $ map (\ (_, address) -> do
+         htmlString <- simpleHTTP (getRequest address) >>= getResponseBody
+         let contents = parseXML htmlString
+         maybe (putStrLn "error")
+           (\channel -> putStrLn $ unlines $ catMaybes $ map get_string $ get_items $ elContent channel)
+           (do
+              rss <- get_rss contents
+              get_channel $ elContent rss))
+       podcasts)
+
 
 main = do
     home <- getHomeDirectory
     val <- readfile emptyCP $ home ++ "/.multipod"
     let cp = forceEither val
         podcasts = forceEither $ items cp "podcasts"
-    
-    msum $ map (\ (_, address) -> do
-        htmlString <- simpleHTTP (getRequest address) >>= getResponseBody
-        let contents = parseXML htmlString
-        maybe (putStrLn "error")
-          (\channel -> putStrLn $ unlines $ catMaybes $ map get_string $ get_items $ elContent channel)
-          (do
-             rss <- get_rss contents
-             get_channel $ elContent rss))
-      podcasts
+    makeREPLSimple [cmd podcasts]
+    where
+      
