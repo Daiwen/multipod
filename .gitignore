@@ -1,2 +1,5 @@
 dist
 multipod
+
+*.swp
+*.swo
