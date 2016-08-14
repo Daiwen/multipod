@@ -1,11 +1,14 @@
-module Multipod.Podcast_Data (
-  get_rss, get_channel, get_items, 
-  get_title, get_link, get_string
+{-# LANGUAGE OverloadedStrings #-}
+
+module Multipod.PodcastReader (
+  get_rss, get_channel, get_items, get_title, get_link_enclosure,
+  get_string
   ) where
 
 import Text.XML.Light.Input
 import Text.XML.Light.Types
-import Data.List
+import Data.List hiding (append)
+import Data.Text (Text, pack,append)
 
 get_rss :: [Content] -> Maybe Element
 get_rss cs = foldl aux Nothing cs
@@ -37,7 +40,7 @@ get_items cs = foldl aux [] cs
       else acc
     _ -> acc
 
-get_title :: [Content] -> Maybe String
+get_title :: [Content] -> Maybe Text
 get_title cs = foldl aux Nothing cs
   where
   aux acc c = case c of
@@ -46,13 +49,13 @@ get_title cs = foldl aux Nothing cs
       then
         let content = elContent e in
         case content of
-        [Text d] -> Just $ cdData d
+        [Text d] -> Just $ pack $ cdData d
         _ -> acc
       else acc
     _ -> acc
 
-get_link :: [Content] -> Maybe String
-get_link cs = foldl aux Nothing cs
+get_link_enclosure :: [Content] -> Maybe Text
+get_link_enclosure cs = foldl aux Nothing cs
   where
   aux acc c = case c of
     Elem e ->
@@ -61,14 +64,12 @@ get_link cs = foldl aux Nothing cs
         let attributes = elAttribs e in
         do
           url <- find (\a -> qName (attrKey a) == "url") attributes
-          return $ attrVal url
+          return $ pack $ attrVal url
       else acc
     _ -> acc
 
-get_string :: Element -> Maybe String
+get_string :: Element -> Maybe Text
 get_string item = do
   t <- get_title $ elContent item
-  l <- get_link  $ elContent item
-  return $ t ++ " " ++ l
-
-
+  l <- get_link_enclosure  $ elContent item
+  return $ append t $ append " " l

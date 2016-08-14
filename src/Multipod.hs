@@ -12,12 +12,10 @@ import System.REPL
 import Text.XML.Light.Input
 import Text.XML.Light.Types
 
-import Multipod.Podcast_Data
+import Multipod.PodcastData
 import Multipod.Commands
+import Multipod.Core
 
 main = do
-    home <- getHomeDirectory
-    val <- readfile emptyCP $ home ++ "/.multipod"
-    let cp = forceEither val
-        podcasts = forceEither $ items cp "podcasts"
-    makeREPLSimple [print_episodes podcasts, add podcasts]
+  state <- initState
+  runCoreMonad (makeREPLSimple [print_episodes]) state
