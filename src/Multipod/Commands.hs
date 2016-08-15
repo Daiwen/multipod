@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Multipod.Commands (
-  print_episodes
+  print_episodes, add
   ) where
 
 import Prelude hiding (putStrLn, unlines)
@@ -19,6 +19,10 @@ import Text.XML.Light.Types
 import Multipod.PodcastData
 import Multipod.PodcastReader
 import Multipod.Core
+import Data.Either
+
+--TODO get rid of that !
+import Data.ConfigFile hiding (get)
 
 
 print_episodes :: Command CoreMonad Text ()
@@ -41,3 +45,35 @@ print_episodes =
             return resultString)
          podcasts)
        liftIO $ putStrLn $ unlines episodes)
+
+
+myasker :: Asker' CoreMonad String
+myasker = Asker "Enter argument: " (Right . unpack) (return . Right)
+
+add :: Command CoreMonad Text ()
+add =
+  makeCommand1
+    "add" ("add" ==) "description" False myasker
+    (\_ address -> do
+       state <- get
+       htmlString <-
+         liftIO $ simpleHTTP (getRequest address) >>= getResponseBody
+       let contents = parseXML htmlString
+           state' =
+             maybe (Left (OtherProblem "Invalid address.", ""))
+               (\title -> do
+                  state' <- addPodcasts state (unpack title) address
+                  return (title, state'))
+               (do
+                  rss <- get_rss contents
+                  channel <- get_channel $ elContent rss
+                  get_title $ elContent channel)
+       newState <- liftIO $
+         case state' of
+           Left (a, b) -> do
+             putStrLn $ append (pack $ show a) $ append " at " (pack $ show b)
+             return state
+           Right (title, newState) -> do
+             putStrLn $ append title " added to the list of podcast."
+             return newState
+       put newState)

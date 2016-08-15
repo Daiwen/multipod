@@ -18,4 +18,4 @@ import Multipod.Core
 
 main = do
   state <- initState
-  runCoreMonad (makeREPLSimple [print_episodes]) state
+  runCoreMonad (makeREPLSimple [add, print_episodes]) state

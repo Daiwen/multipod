@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Multipod.PodcastData (
-    CoreState, initState, getPodcasts
+    CoreState, initState, getPodcasts, addPodcasts
   ) where
 
 import Data.Either.Utils
@@ -20,3 +20,6 @@ initState = do
 
 getPodcasts :: CoreState -> [String]
 getPodcasts cp = map snd $ forceEither $ items cp "podcasts"
+
+addPodcasts :: CoreState -> String -> String -> Either CPError CoreState
+addPodcasts cp title podcast = set cp "podcasts" title podcast
