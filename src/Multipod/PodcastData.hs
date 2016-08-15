@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Multipod.PodcastData (
-    CoreState, initState, getPodcasts, addPodcasts
+    CoreState, initState, saveState, getPodcasts, addPodcasts
   ) where
 
 import Data.Either.Utils
@@ -12,10 +12,20 @@ import System.Directory
 
 type CoreState = ConfigParser
 
+getConfigFile :: IO String
+getConfigFile = do
+  home <- getHomeDirectory
+  return $ home ++ "/.multipod"
+
+saveState :: CoreState -> IO ()
+saveState cp = do
+  file <- getConfigFile
+  writeFile file $ to_string cp
+
 initState :: IO CoreState
 initState = do
-  home <- getHomeDirectory
-  val <- readfile emptyCP $ home ++ "/.multipod"
+  config <- getConfigFile
+  val <- readfile emptyCP config
   return $ forceEither val
 
 getPodcasts :: CoreState -> [String]

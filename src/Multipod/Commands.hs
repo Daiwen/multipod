@@ -75,5 +75,6 @@ add =
              return state
            Right (title, newState) -> do
              putStrLn $ append title " added to the list of podcast."
+             saveState newState
              return newState
        put newState)
