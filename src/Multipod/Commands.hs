@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Multipod.Commands (
-  print_episodes, add
+  printEpisodes, add
   ) where
 
 import Prelude hiding (putStrLn, unlines)
@@ -25,8 +25,8 @@ import Data.Either
 import Data.ConfigFile hiding (get)
 
 
-print_episodes :: Command CoreMonad Text ()
-print_episodes =
+printEpisodes :: Command CoreMonad Text ()
+printEpisodes =
   makeCommand "print_episodes" ("print_episodes" ==) "description"
     (\_ -> do
        state <- get
@@ -35,25 +35,20 @@ print_episodes =
          (\address -> do
             htmlString <- simpleHTTP (getRequest address) >>= getResponseBody
             let contents = parseXML htmlString
-                resultString =
-                  maybe ("error")
-                    (\channel -> unlines $ catMaybes $ map get_string $
-                                 get_items $ elContent channel)
-                    (do
-                       rss <- get_rss contents
-                       get_channel $ elContent rss)
-            return resultString)
+                episodeInfos =
+                  maybe ("error") unlines (getEpisodeInfo contents)
+            return episodeInfos)
          podcasts)
        liftIO $ putStrLn $ unlines episodes)
 
 
-myasker :: Asker' CoreMonad String
-myasker = Asker "Enter argument: " (Right . unpack) (return . Right)
+hiddenAsker :: Asker' CoreMonad String
+hiddenAsker  = Asker "Enter argument: " (Right . unpack) (return . Right)
 
 add :: Command CoreMonad Text ()
 add =
   makeCommand1
-    "add" ("add" ==) "description" False myasker
+    "add" ("add" ==) "description" False hiddenAsker
     (\_ address -> do
        state <- get
        htmlString <-
@@ -64,10 +59,7 @@ add =
                (\title -> do
                   state' <- addPodcasts state (unpack title) address
                   return (title, state'))
-               (do
-                  rss <- get_rss contents
-                  channel <- get_channel $ elContent rss
-                  get_title $ elContent channel)
+               (getPodcastTitle contents)
        newState <- liftIO $
          case state' of
            Left (a, b) -> do

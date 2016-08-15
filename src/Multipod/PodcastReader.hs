@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Multipod.PodcastReader (
-  get_rss, get_channel, get_items, get_title, get_link_enclosure,
-  get_string
+  getEpisodeInfo, getPodcastTitle
   ) where
 
 import Text.XML.Light.Input
@@ -10,8 +9,8 @@ import Text.XML.Light.Types
 import Data.List hiding (append)
 import Data.Text (Text, pack,append)
 
-get_rss :: [Content] -> Maybe Element
-get_rss cs = foldl aux Nothing cs
+getRSS :: [Content] -> Maybe Element
+getRSS cs = foldl aux Nothing cs
   where
   aux acc c = case c of
     Elem e ->
@@ -20,8 +19,8 @@ get_rss cs = foldl aux Nothing cs
       else acc
     _ -> acc
 
-get_channel :: [Content] -> Maybe Element
-get_channel cs = foldl aux Nothing cs
+getChannel :: [Content] -> Maybe Element
+getChannel cs = foldl aux Nothing cs
   where
   aux acc c = case c of
     Elem e ->
@@ -30,8 +29,8 @@ get_channel cs = foldl aux Nothing cs
       else acc
     _ -> acc
 
-get_items :: [Content] -> [Element]
-get_items cs = foldl aux [] cs
+getItems :: [Content] -> [Element]
+getItems cs = foldl aux [] cs
   where
   aux acc c = case c of
     Elem e ->
@@ -40,8 +39,8 @@ get_items cs = foldl aux [] cs
       else acc
     _ -> acc
 
-get_title :: [Content] -> Maybe Text
-get_title cs = foldl aux Nothing cs
+getTitle :: [Content] -> Maybe Text
+getTitle cs = foldl aux Nothing cs
   where
   aux acc c = case c of
     Elem e ->
@@ -54,8 +53,8 @@ get_title cs = foldl aux Nothing cs
       else acc
     _ -> acc
 
-get_link_enclosure :: [Content] -> Maybe Text
-get_link_enclosure cs = foldl aux Nothing cs
+getLinkEnclosure :: [Content] -> Maybe Text
+getLinkEnclosure cs = foldl aux Nothing cs
   where
   aux acc c = case c of
     Elem e ->
@@ -68,8 +67,20 @@ get_link_enclosure cs = foldl aux Nothing cs
       else acc
     _ -> acc
 
-get_string :: Element -> Maybe Text
-get_string item = do
-  t <- get_title $ elContent item
-  l <- get_link_enclosure  $ elContent item
-  return $ append t $ append " " l
+getEpisodeInfo :: [Content] -> Maybe [Text]
+getEpisodeInfo cs = do
+  rss <- getRSS cs
+  channel <- getChannel $ elContent rss
+  let items = getItems $ elContent channel
+  sequence $ map
+    (\item -> do
+      t <- getTitle $ elContent item
+      l <- getLinkEnclosure  $ elContent item
+      return $ append t $ append " " l)
+    items
+
+getPodcastTitle :: [Content] -> Maybe Text
+getPodcastTitle cs = do
+  rss <- getRSS cs
+  channel <- getChannel $ elContent rss
+  getTitle $ elContent channel
