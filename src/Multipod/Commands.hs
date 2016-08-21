@@ -5,7 +5,6 @@ module Multipod.Commands (
   ) where
 
 import Prelude hiding (putStrLn, unlines)
-import Network.HTTP
 import System.REPL
 import Data.Text hiding (map)
 import Data.Text.IO
@@ -16,6 +15,7 @@ import Control.Monad.State
 import Text.XML.Light.Input
 import Text.XML.Light.Types
 
+import Multipod.Network
 import Multipod.PodcastData
 import Multipod.PodcastReader
 import Multipod.Core
@@ -33,7 +33,7 @@ printEpisodes =
        let podcasts = getPodcasts state
        episodes <- (liftIO $ sequence $ map
          (\address -> do
-            htmlString <- simpleHTTP (getRequest address) >>= getResponseBody
+            htmlString <- requestBody address
             let contents = parseXML htmlString
                 episodeInfos =
                   maybe ("error") unlines (getEpisodeInfo contents)
@@ -51,8 +51,9 @@ add =
     "add" ("add" ==) "description" False hiddenAsker
     (\_ address -> do
        state <- get
-       htmlString <-
-         liftIO $ simpleHTTP (getRequest address) >>= getResponseBody
+
+       --TODO catch exceptions here so that it doesn't crach everything
+       htmlString <- liftIO $ requestBody address
        let contents = parseXML htmlString
            state' =
              maybe (Left (OtherProblem "Invalid address.", ""))
