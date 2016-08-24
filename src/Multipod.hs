@@ -9,13 +9,21 @@ import Data.ConfigFile
 import System.Environment
 import System.Directory
 import System.REPL
+import System.REPL.Prompt as PR
 import Text.XML.Light.Input
 import Text.XML.Light.Types
 
-import Multipod.PodcastData
 import Multipod.Commands
 import Multipod.Core
+import Multipod.Handlers
 
 main = do
-  state <- initState
-  runCoreMonad (makeREPLSimple [add, printEpisodes]) state
+  state <- initCoreState
+  runCoreMonad
+    (makeREPL
+       [add, printEpisodes]
+       defExitCmd
+       unknownCommand
+       PR.prompt
+       [networkHandler, dataHandler, readerHandler])
+     state

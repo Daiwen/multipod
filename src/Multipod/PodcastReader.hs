@@ -1,16 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Multipod.PodcastReader (
-  getEpisodeInfo, getPodcastTitle
+  getEpisodeInfo, getPodcastTitle, ReaderError
   ) where
 
 import Text.XML.Light.Input
 import Text.XML.Light.Types
 import Data.List hiding (append)
 import Data.Text (Text, pack,append)
+import Control.Monad.Catch
 
-getRSS :: [Content] -> Maybe Element
-getRSS cs = foldl aux Nothing cs
+data ReaderError = BadRSS String deriving (Eq, Show)
+
+instance Exception ReaderError
+
+getRSS :: (MonadThrow m) => [Content] -> m Element
+getRSS cs =
+  let element = foldl aux Nothing cs in
+  case element of
+    Nothing -> throwM $ BadRSS "Unable to find a 'rss' item in the DOM."
+    Just e  -> return e
   where
   aux acc c = case c of
     Elem e ->
@@ -19,8 +28,12 @@ getRSS cs = foldl aux Nothing cs
       else acc
     _ -> acc
 
-getChannel :: [Content] -> Maybe Element
-getChannel cs = foldl aux Nothing cs
+getChannel :: (MonadThrow m) => [Content] -> m Element
+getChannel cs =
+  let element = foldl aux Nothing cs in
+  case element of
+    Nothing -> throwM $ BadRSS "Unable to find a 'channel' item in the DOM."
+    Just e  -> return e
   where
   aux acc c = case c of
     Elem e ->
@@ -39,8 +52,12 @@ getItems cs = foldl aux [] cs
       else acc
     _ -> acc
 
-getTitle :: [Content] -> Maybe Text
-getTitle cs = foldl aux Nothing cs
+getTitle :: (MonadThrow m) => [Content] -> m Text
+getTitle cs =
+  let element = foldl aux Nothing cs in
+  case element of
+    Nothing -> throwM $ BadRSS "Unable to find a 'title' item in the DOM."
+    Just e  -> return e
   where
   aux acc c = case c of
     Elem e ->
@@ -53,8 +70,12 @@ getTitle cs = foldl aux Nothing cs
       else acc
     _ -> acc
 
-getLinkEnclosure :: [Content] -> Maybe Text
-getLinkEnclosure cs = foldl aux Nothing cs
+getLinkEnclosure :: (MonadThrow m) => [Content] -> m Text
+getLinkEnclosure cs =
+  let element = foldl aux Nothing cs in
+  case element of
+    Nothing -> throwM $ BadRSS "Unable to find nested 'enclosure' and 'url' items in the DOM."
+    Just e  -> return e
   where
   aux acc c = case c of
     Elem e ->
@@ -67,19 +88,19 @@ getLinkEnclosure cs = foldl aux Nothing cs
       else acc
     _ -> acc
 
-getEpisodeInfo :: [Content] -> Maybe [Text]
+getEpisodeInfo :: (MonadThrow m) => [Content] -> m [Text]
 getEpisodeInfo cs = do
   rss <- getRSS cs
   channel <- getChannel $ elContent rss
   let items = getItems $ elContent channel
   sequence $ map
     (\item -> do
-      t <- getTitle $ elContent item
-      l <- getLinkEnclosure  $ elContent item
-      return $ append t $ append " " l)
+       t <- getTitle $ elContent item
+       l <- getLinkEnclosure $ elContent item
+       return $ append t $ append " " l)
     items
 
-getPodcastTitle :: [Content] -> Maybe Text
+getPodcastTitle :: (MonadThrow m) => [Content] -> m Text
 getPodcastTitle cs = do
   rss <- getRSS cs
   channel <- getChannel $ elContent rss
