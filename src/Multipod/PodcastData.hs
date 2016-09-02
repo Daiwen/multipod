@@ -4,13 +4,17 @@ module Multipod.PodcastData (
     DataState, initDataState, saveState, getPodcasts, addPodcasts, DataError
   ) where
 
-import Control.Monad.Catch
+import Control.Monad.Catch hiding (catchIOError)
 import Control.Monad.IO.Class
 import Data.Either.Utils
 import Data.ConfigFile
 import Data.Text hiding (map)
 import System.Environment
 import System.Directory
+import System.IO
+import System.IO.Error
+import System.Posix.Files
+
 
 type DataState = ConfigParser
 
@@ -23,6 +27,13 @@ getConfigFile = do
   home <- getHomeDirectory
   return $ home ++ "/.multipod"
 
+initConfigFile :: IO ()
+initConfigFile = do
+  file <- getConfigFile
+  handle <- openFile file WriteMode
+  hPutStrLn handle "[podcasts]"
+  hClose handle
+
 saveState :: DataState -> IO ()
 saveState cp = do
   file <- getConfigFile
@@ -31,9 +42,13 @@ saveState cp = do
 initDataState :: (MonadIO m) => m DataState
 initDataState = do
   config <- liftIO $ getConfigFile
-  val <- liftIO $ readfile emptyCP config
+  val <- liftIO $ catchIOError (readfile emptyCP config)
+    (\e -> if isDoesNotExistError e
+     then do initConfigFile
+             return $ add_section emptyCP "podcasts"
+     else ioError e)
   case val of
-    Left  e -> return emptyCP
+    Left  e -> return emptyCP --this should be returning a proper error
     Right t -> return t
 
 getPodcasts :: (MonadThrow m) => DataState -> m [String]
