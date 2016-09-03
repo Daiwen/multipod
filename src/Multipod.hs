@@ -25,5 +25,5 @@ main = do
        defExitCmd
        unknownCommand
        PR.prompt
-       [networkHandler, dataHandler, readerHandler])
+       [networkHandler, dataHandler, readerHandler, commandHandler])
      state

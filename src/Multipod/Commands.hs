@@ -1,12 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Multipod.Commands (
-  printEpisodes, add, unknownCommand
+  printEpisodes, add, unknownCommand, CommandError
   ) where
 
 import Prelude hiding (putStrLn, unlines)
 
 import System.REPL
+import System.REPL.Types
 import Data.Either
 import Data.Text hiding (map, filter)
 import Data.Text.IO
@@ -14,7 +15,7 @@ import Data.Maybe
 import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.State
-import Network.URI (parseURI)
+import Network.URI (parseURI, uriScheme)
 import Text.XML.Light.Input
 import Text.XML.Light.Types
 
@@ -23,6 +24,16 @@ import Multipod.PodcastData
 import Multipod.PodcastReader
 import Multipod.Core
 
+data CommandError =
+    NotUrl
+  | NotHTTPS
+ deriving (Eq) 
+
+instance Show CommandError where
+  show NotUrl   = "Argument is not a well formed URL."
+  show NotHTTPS = "HTTPS not supported."
+
+instance Exception CommandError
 
 unknownCommand :: Command CoreMonad Text ()
 unknownCommand =
@@ -46,20 +57,32 @@ printEpisodes =
        liftIO $ putStrLn $ unlines episodes)
 
 
-hiddenAsker :: Asker' CoreMonad String
-hiddenAsker  = Asker "Enter argument: " (Right . unpack) (return . Right)
+urlAsker :: Asker' CoreMonad String
+urlAsker = Asker "Enter a podcast address: " (Right . unpack)
+  (\argument ->
+     let uri = parseURI argument in
+     case uri of
+       Just url ->
+         if ((toLower $ pack $ uriScheme url) == "https:")
+         then
+           return $ Right argument
+         else
+           return $ Left $ SomeException NotHTTPS
+       Nothing ->
+         return $ Left $ SomeException NotUrl)
+     
 
 add :: Command CoreMonad Text ()
 add =
   makeCommand1
-    "add" ("add" ==) "description" False hiddenAsker
+    "add" ("add" ==) "description" False urlAsker
     (\_ address -> do
        state <- get
        htmlString <- requestBody address
        let contents = parseXML htmlString
-       title <- getPodcastTitle contents
+       title <- getPodcastTitle contents 
        newState <- addPodcasts state (unpack title) address
-
+        
        liftIO $ do
          putStrLn $ append title " added to the list of podcast."
          saveState newState
