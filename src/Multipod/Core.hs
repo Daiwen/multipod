@@ -13,16 +13,15 @@ import Multipod.PodcastReader
 
 type CoreState = DataState
 
-newtype CoreMonad a = CMo {
-  runCore :: StateT CoreState IO a
-} deriving (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch,
-            MonadState CoreState) 
+newtype CoreMonad a = CMo
+  { runCore :: StateT CoreState IO a
+  } deriving (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch,
+              MonadState CoreState)
 
-runCoreMonad :: CoreMonad a -> CoreState -> IO a 
-runCoreMonad k state =
-  do
-    (res, _) <- runStateT (runCore k) state
-    return res
+runCoreMonad :: CoreMonad a -> CoreState -> IO a
+runCoreMonad k state = do
+  (res, _) <- runStateT (runCore k) state
+  return res
 
 initCoreState :: IO CoreState
 initCoreState = initDataState

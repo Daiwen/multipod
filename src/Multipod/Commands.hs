@@ -1,7 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Multipod.Commands (
-  printEpisodes, add, unknownCommand, CommandError
+module Multipod.Commands
+  ( printEpisodes
+  , add
+  , unknownCommand
+  , CommandError
   ) where
 
 import Prelude hiding (putStrLn, unlines)
@@ -24,66 +27,78 @@ import Multipod.PodcastData
 import Multipod.PodcastReader
 import Multipod.Core
 
-data CommandError =
-    NotUrl
+data CommandError
+  = NotUrl
   | NotHTTPS
- deriving (Eq) 
+  deriving (Eq)
 
 instance Show CommandError where
-  show NotUrl   = "Argument is not a well formed URL."
+  show NotUrl = "Argument is not a well formed URL."
   show NotHTTPS = "HTTPS not supported."
 
 instance Exception CommandError
 
 unknownCommand :: Command CoreMonad Text ()
 unknownCommand =
-  makeCommandN "" (const True) "" False [] (repeat lineAsker)
+  makeCommandN
+    ""
+    (const True)
+    ""
+    False
+    []
+    (repeat lineAsker)
     (\t _ -> liftIO $ putStrLn $ append "Unknown command: " t)
 
 printEpisodes :: Command CoreMonad Text ()
 printEpisodes =
-  makeCommand "print_episodes" ("print_episodes" ==) "description"
+  makeCommand
+    "print_episodes"
+    ("print_episodes" ==)
+    "description"
     (\_ -> do
        state <- get
        podcasts' <- getPodcasts state
-       let podcasts  = filter (isJust . parseURI) podcasts'
-       episodes <- sequence $ map
-         (\address -> do
-            htmlString <- requestBody address
-            let contents = parseXML htmlString
-            episodeInfos <- getEpisodeInfo contents
-            return $ unlines episodeInfos)
-         podcasts
+       let podcasts = filter (isJust . parseURI) podcasts'
+       episodes <-
+         sequence $
+         map
+           (\address -> do
+              htmlString <- requestBody address
+              let contents = parseXML htmlString
+              episodeInfos <- getEpisodeInfo contents
+              return $ unlines episodeInfos)
+           podcasts
        liftIO $ putStrLn $ unlines episodes)
 
-
 urlAsker :: Asker' CoreMonad String
-urlAsker = Asker "Enter a podcast address: " (Right . unpack)
-  (\argument ->
-     let uri = parseURI argument in
-     case uri of
-       Just url ->
-         if ((toLower $ pack $ uriScheme url) == "https:")
-         then
-           return $ Right argument
-         else
-           return $ Left $ SomeException NotHTTPS
-       Nothing ->
-         return $ Left $ SomeException NotUrl)
-     
+urlAsker =
+  Asker
+    "Enter a podcast address: "
+    (Right . unpack)
+    (\argument ->
+        let uri = parseURI argument
+        in case uri of
+             Just url ->
+               if ((toLower $ pack $ uriScheme url) == "https:")
+                 then return $ Right argument
+                 else return $ Left $ SomeException NotHTTPS
+             Nothing -> return $ Left $ SomeException NotUrl)
 
 add :: Command CoreMonad Text ()
 add =
   makeCommand1
-    "add" ("add" ==) "description" False urlAsker
+    "add"
+    ("add" ==)
+    "description"
+    False
+    urlAsker
     (\_ address -> do
        state <- get
        htmlString <- requestBody address
        let contents = parseXML htmlString
-       title <- getPodcastTitle contents 
+       title <- getPodcastTitle contents
        newState <- addPodcasts state (unpack title) address
-        
-       liftIO $ do
-         putStrLn $ append title " added to the list of podcast."
-         saveState newState
+       liftIO $
+         do putStrLn $ append title " added to the list of podcast."
+            saveState newState
        put newState)

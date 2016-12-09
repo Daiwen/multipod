@@ -26,4 +26,4 @@ main = do
        unknownCommand
        PR.prompt
        [networkHandler, dataHandler, readerHandler, commandHandler])
-     state
+    state
