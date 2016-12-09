@@ -1,5 +1,6 @@
 dist
 multipod
+.stack-work
 
 *.swp
 *.swo
