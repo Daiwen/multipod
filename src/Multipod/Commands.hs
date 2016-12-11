@@ -80,8 +80,8 @@ urlAsker =
         in case uri of
              Just url ->
                if ((toLower $ pack $ uriScheme url) == "https:")
-                 then return $ Right argument
-                 else return $ Left $ SomeException NotHTTPS
+                 then return $ Left $ SomeException NotHTTPS
+                 else return $ Right argument
              Nothing -> return $ Left $ SomeException NotUrl)
 
 add :: Command CoreMonad Text ()
