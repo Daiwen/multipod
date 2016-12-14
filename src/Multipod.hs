@@ -16,7 +16,6 @@ import Multipod.Core
 import Multipod.Handlers
 
 main = do
-  state <- initCoreState
   runCoreMonad
     (makeREPL
        [add, printEpisodes]
@@ -24,4 +23,3 @@ main = do
        unknownCommand
        PR.prompt
        [networkHandler, readerHandler, dataHandler, commandHandler])
-    state

@@ -17,7 +17,7 @@ import Data.Text.IO
 import Data.Maybe
 import Control.Monad
 import Control.Monad.Catch
-import Control.Monad.State
+import Control.Monad.IO.Class
 import Network.URI (parseURI, uriScheme)
 import Text.XML.Light.Input
 import Text.XML.Light.Types
