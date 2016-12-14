@@ -4,8 +4,6 @@ module Main where
 
 import Control.Exception.Base
 import Data.List
-import Data.Either.Utils
-import Data.ConfigFile
 import System.Environment
 import System.Directory
 import System.REPL
@@ -25,5 +23,5 @@ main = do
        defExitCmd
        unknownCommand
        PR.prompt
-       [networkHandler, dataHandler, readerHandler, commandHandler])
+       [networkHandler, readerHandler, dataHandler, commandHandler])
     state

@@ -56,8 +56,7 @@ printEpisodes =
     ("print_episodes" ==)
     "description"
     (\_ -> do
-       state <- get
-       podcasts' <- getPodcasts state
+       podcasts' <- getPodcasts
        let podcasts = filter (isJust . parseURI) podcasts'
        episodes <-
          sequence $
@@ -93,12 +92,10 @@ add =
     False
     urlAsker
     (\_ address -> do
-       state <- get
        htmlString <- requestBody address
        let contents = parseXML htmlString
        title <- getPodcastTitle contents
-       newState <- addPodcasts state (unpack title) address
+       addPodcasts $ mkPodcast (unpack title) address
        liftIO $
          do putStrLn $ append title " added to the list of podcast."
-            saveState newState
-       put newState)
+       )

@@ -2,8 +2,8 @@
 
 module Multipod.Handlers
   ( networkHandler
-  , dataHandler
   , readerHandler
+  , dataHandler
   , commandHandler
   ) where
 
@@ -21,15 +21,15 @@ networkHandler
   => Handler m ()
 networkHandler = Handler (\e -> liftIO $ putStrLn $ show (e :: NetworkError))
 
-dataHandler
-  :: (MonadIO m)
-  => Handler m ()
-dataHandler = Handler (\e -> liftIO $ putStrLn $ show (e :: DataError))
-
 readerHandler
   :: (MonadIO m)
   => Handler m ()
 readerHandler = Handler (\e -> liftIO $ putStrLn $ show (e :: ReaderError))
+
+dataHandler
+  :: (MonadIO m)
+  => Handler m ()
+dataHandler = Handler (\e -> liftIO $ putStrLn $ show (e :: DataError))
 
 commandHandler
   :: (MonadIO m)

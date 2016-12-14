@@ -27,8 +27,6 @@ executable multipod
   build-depends:       base >=4.9 && <4.10
                       ,HTTP
                       ,xml
-                      ,ConfigFile
-                      ,MissingH
                       ,directory
                       ,text
                       ,repl-toolkit
@@ -36,5 +34,11 @@ executable multipod
                       ,exceptions
                       ,network-uri
                       ,unix
+                      ,persistent
+                      ,persistent-sqlite
+                      ,persistent-template
+                      ,monad-control
+                      ,transformers-base
+                      ,monad-logger
   hs-source-dirs:      src
   default-language:    Haskell2010

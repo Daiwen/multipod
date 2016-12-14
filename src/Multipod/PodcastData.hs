@@ -1,82 +1,84 @@
+{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Multipod.PodcastData
-  ( DataState
-  , initDataState
-  , saveState
-  , getPodcasts
+  ( getPodcasts
   , addPodcasts
+  , mkPodcast
   , DataError
   ) where
 
 import Control.Monad.Catch hiding (catchIOError)
 import Control.Monad.IO.Class
-import Data.Either.Utils
-import Data.ConfigFile
+import Control.Monad.Logger
+import Control.Monad.Trans.Control
 import Data.Text hiding (map)
+import Database.Persist
+import Database.Persist.Sql
+import Database.Persist.Sqlite
+import Database.Persist.TH
 import System.Environment
 import System.Directory
 import System.IO
-import System.IO.Error
 import System.Posix.Files
 
-type DataState = ConfigParser
+share
+  [mkPersist sqlSettings, mkMigrate "migrateAll"]
+  [persistLowerCase|
+Podcast
+    name String
+    url String
+    deriving Show
+|]
 
-data DataError =
-  DataError CPError
-  deriving (Eq, Show)
+data DataError
+  = AlreadySync
+  deriving (Eq)
+
+instance Show DataError where
+  show AlreadySync = "Podcast already subscribed to."
 
 instance Exception DataError
 
-getConfigFile :: IO String
-getConfigFile = do
+mkPodcast title url = Podcast title url
+
+getDataBasePath :: IO Text
+getDataBasePath = do
   home <- getHomeDirectory
-  return $ home ++ "/.multipod"
+  return $ append (pack home) "/.multipod.db"
 
-initConfigFile :: IO ()
-initConfigFile = do
-  file <- getConfigFile
-  handle <- openFile file WriteMode
-  hPutStrLn handle "[podcasts]"
-  hClose handle
-
-saveState :: DataState -> IO ()
-saveState cp = do
-  file <- getConfigFile
-  writeFile file $ to_string cp
-
-initDataState
-  :: (MonadIO m)
-  => m DataState
-initDataState = do
-  config <- liftIO $ getConfigFile
-  val <-
-    liftIO $
-    catchIOError
-      (readfile emptyCP config)
-      (\e ->
-          if isDoesNotExistError e
-            then do
-              initConfigFile
-              return $ add_section emptyCP "podcasts"
-            else ioError e)
-  case val of
-    Left e -> return emptyCP --this should be returning a proper error
-    Right t -> return t
+initDataBase :: IO ()
+initDataBase = do
+  dataBasePath <- getDataBasePath
+  runSqlite dataBasePath $ do runMigration migrateAll
 
 getPodcasts
-  :: (MonadThrow m)
-  => DataState -> m [String]
-getPodcasts cp =
-  let episodes = items cp "podcasts"
-  in case episodes of
-       Left e -> throwM $ DataError e
-       Right r -> return $ map snd r
+  :: (MonadIO m, MonadBaseControl IO m, MonadLogger m)
+  => m [String]
+getPodcasts = do
+  dataBasePath <- liftIO getDataBasePath
+  podcasts <-
+    withSqliteConn dataBasePath $ runSqlConn $ do
+      runMigration migrateAll
+      selectList [] [Asc PodcastName]
+  return $ map (\(Entity _ p) -> podcastUrl p) podcasts
 
 addPodcasts
-  :: (MonadThrow m)
-  => DataState -> String -> String -> m DataState
-addPodcasts cp title podcast =
-  case set cp "podcasts" title podcast of
-    Left e -> throwM $ DataError e
-    Right t -> return t
+  :: (MonadIO m, MonadBaseControl IO m, MonadLogger m, MonadThrow m)
+  => Podcast -> m ()
+addPodcasts podcast = do
+  dataBasePath <- liftIO getDataBasePath
+  withSqliteConn dataBasePath $
+    runSqlConn $
+    do runMigration migrateAll
+       sameUrl <- selectList [PodcastUrl ==. podcastUrl podcast] []
+       case sameUrl of
+         [] -> do insert podcast; return ()
+         _  -> throwM AlreadySync
