@@ -1,18 +1,24 @@
-{-# LANGUAGE EmptyDataDecls #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE EmptyDataDecls             #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE QuasiQuotes                #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module Multipod.PodcastData
   ( getPodcasts
   , addPodcasts
   , mkPodcast
+  , Podcast
+  , podcastName
   , DataError
+  , DataApp
+  , persistConfig
+  , connPool
+  , mkDataApp
   ) where
 
 import Control.Monad.Catch hiding (catchIOError)
@@ -38,6 +44,12 @@ Podcast
     deriving Show
 |]
 
+data DataApp = DataApp
+  { persistConfig :: SqliteConf
+  , connPool      :: ConnectionPool
+  }
+
+
 data DataError
   = AlreadySync
   deriving (Eq)
@@ -53,6 +65,16 @@ getDataBasePath :: IO Text
 getDataBasePath = do
   home <- getHomeDirectory
   return $ append (pack home) "/.multipod.db"
+
+
+mkDataApp = do
+  path <- getDataBasePath
+  let conf = SqliteConf path 1
+  pool <- createPoolConfig conf
+  return $ DataApp
+    { persistConfig = conf
+    , connPool      = pool
+    }
 
 initDataBase :: IO ()
 initDataBase = do
