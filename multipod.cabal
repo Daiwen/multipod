@@ -17,9 +17,7 @@ cabal-version:       >=1.10
 executable multipod
   main-is:             Multipod.hs
   other-modules:       Multipod.App
-                      ,Multipod.Commands
                       ,Multipod.Core
-                      ,Multipod.Handlers
                       ,Multipod.Network
                       ,Multipod.PodcastData
                       ,Multipod.PodcastReader
@@ -30,7 +28,6 @@ executable multipod
                       ,xml
                       ,directory
                       ,text
-                      ,repl-toolkit
                       ,mtl
                       ,exceptions
                       ,network-uri
@@ -42,6 +39,5 @@ executable multipod
                       ,transformers-base
                       ,monad-logger
                       ,yesod
-                      ,async
   hs-source-dirs:      src
   default-language:    Haskell2010

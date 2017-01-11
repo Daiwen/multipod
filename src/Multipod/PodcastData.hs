@@ -9,8 +9,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 module Multipod.PodcastData
-  ( getPodcasts
-  , addPodcasts
+  ( addPodcasts
   , mkPodcast
   , initDataBase
   , Podcast
@@ -81,17 +80,6 @@ initDataBase :: IO ()
 initDataBase = do
   dataBasePath <- getDataBasePath
   runSqlite dataBasePath $ do runMigration migrateAll
-
-getPodcasts
-  :: (MonadIO m, MonadBaseControl IO m, MonadLogger m)
-  => m [String]
-getPodcasts = do
-  dataBasePath <- liftIO getDataBasePath
-  podcasts <-
-    withSqliteConn dataBasePath $ runSqlConn $ do
-      runMigration migrateAll
-      selectList [] [Asc PodcastName]
-  return $ map (\(Entity _ p) -> podcastUrl p) podcasts
 
 addPodcasts
   :: (MonadIO m, MonadBaseControl IO m, MonadLogger m, MonadThrow m)
