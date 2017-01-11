@@ -26,8 +26,10 @@ import Multipod.App
 import Multipod.Commands
 import Multipod.Core
 import Multipod.Handlers
+import Multipod.PodcastData
 
-main =
+main = do
+  initDataBase
   race_ 
     launchApp
     $ runCoreMonad

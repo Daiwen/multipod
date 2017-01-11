@@ -13,11 +13,17 @@ module Multipod.App
   ( launchApp
   ) where
 
+import Control.Applicative
+import Data.Text
 import Database.Persist.Sql
+import Text.XML.Light.Input
+import Text.XML.Light.Types
 import Yesod
 
 import Multipod.Core
+import Multipod.Network
 import Multipod.PodcastData
+import Multipod.PodcastReader
 
 data App = App
   { dataApp :: DataApp
@@ -29,16 +35,22 @@ instance YesodPersist App where
     runDB = defaultRunDB (persistConfig . dataApp) $ connPool . dataApp
 instance YesodPersistRunner App where
     getDBRunner = defaultGetDBRunner $ connPool . dataApp
+instance RenderMessage App FormMessage where
+    renderMessage _ _ = defaultFormMessage
 
 mkYesod "App" [parseRoutes|
-/ HomeR GET
+/ HomeR GET POST
 /podcast/#String PodcastR GET
 |]
 
-getHomeR :: Handler Html
-getHomeR = do
-    podcasts <- runDB $ selectList [] []
 
+type Form a = Html -> MForm Handler (FormResult a, Widget)
+
+form :: Form Text
+form = renderDivs $ areq textField "" Nothing
+
+
+displayHome podcasts widget enctype = do
     defaultLayout $ do
         setTitle "Synced podcasts"
         [whamlet|
@@ -47,7 +59,36 @@ getHomeR = do
                     <li>
                         <a href=@{PodcastR $ podcastName podcast}>
                             #{podcastName podcast}
+            <form method=post action=@{HomeR} enctype=#{enctype}>
+                ^{widget}
+                <button>Add
         |]
+
+getHomeR :: Handler Html
+getHomeR = do
+    podcasts <- runDB $ selectList [] []
+    ((res, widget), enctype) <- runFormPost form
+
+    displayHome podcasts widget enctype
+
+
+handleResult res = case res of
+    FormSuccess address -> do
+
+      htmlString <- requestBody (unpack address)
+      let contents = parseXML htmlString
+      title <- getPodcastTitle contents
+      addPodcasts $ mkPodcast (unpack title) (unpack address)
+    _ -> return ()
+
+postHomeR :: Handler Html
+postHomeR = do
+    ((res, widget), enctype) <- runFormPost form
+
+    handleResult res
+
+    podcasts <- runDB $ selectList [] []
+    displayHome podcasts widget enctype
 
 getPodcastR :: String -> Handler Html
 getPodcastR = error "Implementation left as exercise to reader"

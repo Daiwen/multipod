@@ -12,6 +12,7 @@ module Multipod.PodcastData
   ( getPodcasts
   , addPodcasts
   , mkPodcast
+  , initDataBase
   , Podcast
   , podcastName
   , DataError
