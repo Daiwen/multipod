@@ -14,16 +14,20 @@ module Multipod.PodcastData
   , initDataBase
   , Podcast
   , podcastName
+  , podcastUrl
   , DataError
   , DataApp
   , persistConfig
   , connPool
   , mkDataApp
+  , getAllPodcast
+  , getPodcastFromName
   ) where
 
 import Control.Monad.Catch hiding (catchIOError)
 import Control.Monad.IO.Class
 import Control.Monad.Logger
+import Control.Monad.Reader
 import Control.Monad.Trans.Control
 import Data.Text hiding (map)
 import Database.Persist
@@ -93,3 +97,13 @@ addPodcasts podcast = do
        case sameUrl of
          [] -> do insert podcast; return ()
          _  -> throwM AlreadySync
+
+getAllPodcast
+  :: MonadIO m
+  => ReaderT SqlBackend m [Entity Podcast]
+getAllPodcast = selectList [] []
+
+getPodcastFromName
+  :: MonadIO m
+  => String -> ReaderT SqlBackend m (Maybe (Entity Podcast))
+getPodcastFromName name = selectFirst [PodcastName ==. name] []

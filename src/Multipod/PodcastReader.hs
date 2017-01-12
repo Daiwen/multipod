@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Multipod.PodcastReader
-  ( getEpisodeInfo
+  ( getEpisodeTitle
   , getPodcastTitle
   , ReaderError
   ) where
@@ -104,10 +104,10 @@ getLinkEnclosure cs =
             else acc
         _ -> acc
 
-getEpisodeInfo
+getEpisodeTitle
   :: (MonadThrow m)
   => [Content] -> m [Text]
-getEpisodeInfo cs = do
+getEpisodeTitle cs = do
   rss <- getRSS cs
   channel <- getChannel $ elContent rss
   let items = getItems $ elContent channel
@@ -115,8 +115,7 @@ getEpisodeInfo cs = do
     map
       (\item -> do
          t <- getTitle $ elContent item
-         l <- getLinkEnclosure $ elContent item
-         return $ append t $ append " " l)
+         return t)
       items
 
 getPodcastTitle

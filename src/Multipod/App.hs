@@ -66,7 +66,7 @@ displayHome podcasts widget enctype = do
 
 getHomeR :: Handler Html
 getHomeR = do
-    podcasts <- runDB $ selectList [] []
+    podcasts <- runDB getAllPodcast
     ((res, widget), enctype) <- runFormPost form
 
     displayHome podcasts widget enctype
@@ -90,8 +90,30 @@ postHomeR = do
     podcasts <- runDB $ selectList [] []
     displayHome podcasts widget enctype
 
+extractInfos podcast = case podcast of
+    Just (Entity _ p) -> do
+
+      let address = podcastUrl p
+      htmlString <- requestBody address
+      let contents = parseXML htmlString
+
+      getEpisodeTitle contents
+
+    Nothing -> return [""]
+
 getPodcastR :: String -> Handler Html
-getPodcastR = error "Implementation left as exercise to reader"
+getPodcastR  name = do
+    podcastAddress <- runDB $ getPodcastFromName name
+
+    infos <- extractInfos podcastAddress
+
+    defaultLayout $ do
+        setTitle "Synced podcasts"
+        [whamlet|
+            <ul>
+                $forall title <- infos
+                    <li> #{title}
+        |]
 
 launchApp = do
   dataApp <- mkDataApp
