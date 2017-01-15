@@ -10,11 +10,15 @@
 
 module Multipod.PodcastData
   ( addPodcast
+  , addEpisode
   , mkPodcast
+  , mkEpisode
   , initDataBase
   , Podcast
   , podcastName
   , podcastUrl
+  , episodeName
+  , episodeUrl
   , DataError
   , DataApp
   , persistConfig
@@ -22,6 +26,7 @@ module Multipod.PodcastData
   , mkDataApp
   , getAllPodcast
   , getPodcastFromName
+  , getEpisodesFromPodcastId
   ) where
 
 import Control.Monad.Catch hiding (catchIOError)
@@ -48,8 +53,8 @@ Podcast
     deriving Show
 Episode
     name String
-    mp3url String
-    podcast PodcastId
+    url String
+    podcastId PodcastId
     deriving Show
 |]
 
@@ -69,6 +74,8 @@ instance Show DataError where
 instance Exception DataError
 
 mkPodcast title url = Podcast title url
+
+mkEpisode name url podcastId = Episode name url podcastId
 
 getDataBasePath :: IO Text
 getDataBasePath = do
@@ -92,7 +99,7 @@ initDataBase = do
 
 addPodcast
   :: (MonadIO m, MonadBaseControl IO m, MonadLogger m, MonadThrow m)
-  => Podcast -> m ()
+  => Podcast -> m PodcastId
 addPodcast podcast = do
   dataBasePath <- liftIO getDataBasePath
   withSqliteConn dataBasePath $
@@ -100,8 +107,21 @@ addPodcast podcast = do
     do runMigration migrateAll
        sameUrl <- selectList [PodcastUrl ==. podcastUrl podcast] []
        case sameUrl of
-         [] -> do insert podcast; return ()
+         [] -> insert podcast
          _  -> throwM AlreadySync
+
+addEpisode
+  :: (MonadIO m, MonadBaseControl IO m, MonadLogger m, MonadThrow m)
+  => Episode -> m ()
+addEpisode episode = do
+  dataBasePath <- liftIO getDataBasePath
+  withSqliteConn dataBasePath $
+    runSqlConn $
+    do runMigration migrateAll
+       sameUrl <- selectList [EpisodeUrl ==. episodeUrl episode] []
+       case sameUrl of
+         [] -> do insert episode; return ()
+         _  -> return ()
 
 getAllPodcast
   :: MonadIO m
@@ -112,3 +132,8 @@ getPodcastFromName
   :: MonadIO m
   => String -> ReaderT SqlBackend m (Maybe (Entity Podcast))
 getPodcastFromName name = selectFirst [PodcastName ==. name] []
+
+getEpisodesFromPodcastId
+  :: MonadIO m
+  => PodcastId -> ReaderT SqlBackend m [Entity Episode]
+getEpisodesFromPodcastId id = selectList [EpisodePodcastId ==. id] []

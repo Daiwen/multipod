@@ -2,7 +2,9 @@
 
 module Multipod.PodcastReader
   ( getEpisodeTitle
+  , getEpisodeUrl
   , getPodcastTitle
+  , getPodcastEpisodes
   , ReaderError
   ) where
 
@@ -104,19 +106,14 @@ getLinkEnclosure cs =
             else acc
         _ -> acc
 
-getEpisodeTitle
+getPodcastEpisodes
   :: (MonadThrow m)
-  => [Content] -> m [Text]
-getEpisodeTitle cs = do
+  => [Content] -> m [Element]
+getPodcastEpisodes cs = do
   rss <- getRSS cs
   channel <- getChannel $ elContent rss
   let items = getItems $ elContent channel
-  sequence $
-    map
-      (\item -> do
-         t <- getTitle $ elContent item
-         return t)
-      items
+  return items
 
 getPodcastTitle
   :: (MonadThrow m)
@@ -125,3 +122,13 @@ getPodcastTitle cs = do
   rss <- getRSS cs
   channel <- getChannel $ elContent rss
   getTitle $ elContent channel
+
+getEpisodeTitle
+  :: (MonadThrow m)
+  => Element -> m Text
+getEpisodeTitle item = getTitle $ elContent item
+
+getEpisodeUrl
+  :: (MonadThrow m)
+  => Element -> m Text
+getEpisodeUrl item = getLinkEnclosure $ elContent item

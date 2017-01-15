@@ -14,7 +14,7 @@ module Multipod.App
   ) where
 
 import Control.Applicative
-import Data.Text
+import Data.Text hiding (map, zip)
 import Database.Persist.Sql
 import Text.XML.Light.Input
 import Text.XML.Light.Types
@@ -71,14 +71,24 @@ getHomeR = do
 
     displayHome podcasts widget enctype
 
-
+handleResult :: FormResult Text -> Handler ()
 handleResult res = case res of
     FormSuccess address -> do
 
       htmlString <- requestBody (unpack address)
       let contents = parseXML htmlString
       title <- getPodcastTitle contents
-      addPodcast $ mkPodcast (unpack title) (unpack address)
+      episodes <- getPodcastEpisodes contents
+
+      id <- addPodcast $ mkPodcast (unpack title) (unpack address)
+      sequence $ map
+        (\episode -> do
+           title <- getEpisodeTitle episode
+           url   <- getEpisodeUrl   episode
+           addEpisode $ mkEpisode (unpack title) (unpack url) id)
+        episodes
+      return ()
+
     _ -> return ()
 
 postHomeR :: Handler Html
@@ -87,32 +97,34 @@ postHomeR = do
 
     handleResult res
 
-    podcasts <- runDB $ selectList [] []
+    podcasts <- runDB $ getAllPodcast
     displayHome podcasts widget enctype
 
+
+extractInfos :: Maybe (Entity Podcast) -> Handler [(Text, Text)]
 extractInfos podcast = case podcast of
-    Just (Entity _ p) -> do
+    Just (Entity id _) -> do
+      episodes <- runDB $ getEpisodesFromPodcastId id
+      return $ map
+        (\(Entity _ e) -> (pack $ episodeName e, pack $ episodeUrl e))
+        episodes
 
-      let address = podcastUrl p
-      htmlString <- requestBody address
-      let contents = parseXML htmlString
-
-      getEpisodeTitle contents
-
-    Nothing -> return [""]
+    Nothing -> return []
 
 getPodcastR :: String -> Handler Html
 getPodcastR  name = do
     podcastAddress <- runDB $ getPodcastFromName name
 
-    infos <- extractInfos podcastAddress
+    titles <- extractInfos podcastAddress
 
     defaultLayout $ do
         setTitle "Synced podcasts"
         [whamlet|
             <ul>
-                $forall title <- infos
-                    <li> #{title}
+                $forall (title, url) <- titles
+                    <li>
+                        <a href=#{url}>
+                          #{title}
         |]
 
 launchApp = do
