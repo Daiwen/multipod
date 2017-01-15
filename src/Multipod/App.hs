@@ -78,7 +78,7 @@ handleResult res = case res of
       htmlString <- requestBody (unpack address)
       let contents = parseXML htmlString
       title <- getPodcastTitle contents
-      addPodcasts $ mkPodcast (unpack title) (unpack address)
+      addPodcast $ mkPodcast (unpack title) (unpack address)
     _ -> return ()
 
 postHomeR :: Handler Html
