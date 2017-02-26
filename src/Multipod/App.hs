@@ -46,9 +46,8 @@ mkYesod "App" [parseRoutes|
 
 type Form a = Html -> MForm Handler (FormResult a, Widget)
 
-form :: Form Text
-form = renderDivs $ areq textField "" Nothing
-
+form :: Form (Maybe Text)
+form = renderDivs $ aopt textField "" Nothing
 
 displayHome podcasts widget enctype = do
     defaultLayout $ do
@@ -61,35 +60,56 @@ displayHome podcasts widget enctype = do
                             #{podcastName podcast}
             <form method=post action=@{HomeR} enctype=#{enctype}>
                 ^{widget}
-                <button>Add
+                <button type=submit name=action value=add>Add
+                <button type=submit name=action value=update>Update
         |]
 
 getHomeR :: Handler Html
 getHomeR = do
     podcasts <- runDB getAllPodcast
-    ((res, widget), enctype) <- runFormPost form
+    (widget, enctype) <- generateFormPost form
 
     displayHome podcasts widget enctype
 
-handleResult :: FormResult Text -> Handler ()
-handleResult res = case res of
-    FormSuccess address -> do
+getTitleAndEpisodes :: Text -> Handler (Text, [Element])
+getTitleAndEpisodes address = do
+    htmlString <- requestBody (unpack address)
+    let contents = parseXML htmlString
+    title <- getPodcastTitle contents
+    episodes <- getPodcastEpisodes contents
+    return (title, episodes)
 
-      htmlString <- requestBody (unpack address)
-      let contents = parseXML htmlString
-      title <- getPodcastTitle contents
-      episodes <- getPodcastEpisodes contents
+addEpisodes :: Key Podcast -> Element -> Handler ()
+addEpisodes id episode = do
+    title <- getEpisodeTitle episode
+    url   <- getEpisodeUrl   episode
+    addEpisode $ mkEpisode (unpack title) (unpack url) id
 
-      id <- addPodcast $ mkPodcast (unpack title) (unpack address)
-      sequence $ map
-        (\episode -> do
-           title <- getEpisodeTitle episode
-           url   <- getEpisodeUrl   episode
-           addEpisode $ mkEpisode (unpack title) (unpack url) id)
-        episodes
-      return ()
+updatePodcasts :: Handler ()
+updatePodcasts = do
+    podcasts <- runDB $ getAllPodcast
+    let idurls = map (\(Entity id p) -> (id, pack $ podcastUrl p)) podcasts
+    sequence $ map
+      (\(id, url) -> do
+        (_, episodes) <- getTitleAndEpisodes url
+        sequence $ map (addEpisodes id) episodes)
+      idurls
+    return ()
 
-    _ -> return ()
+
+handleResult :: FormResult (Maybe Text) -> Handler ()
+handleResult res = do
+    action <- lookupPostParam "action"
+    case (res, action) of
+      (_, Just "update") -> updatePodcasts
+      (FormSuccess (Just address), Just "add") -> do
+         (title, episodes) <- getTitleAndEpisodes address
+
+         id <- addPodcast $ mkPodcast (unpack title) (unpack address)
+         sequence $ map (addEpisodes id) episodes
+         return ()
+
+      _ -> return ()
 
 postHomeR :: Handler Html
 postHomeR = do
