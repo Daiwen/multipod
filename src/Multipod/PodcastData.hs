@@ -15,10 +15,12 @@ module Multipod.PodcastData
   , mkEpisode
   , initDataBase
   , Podcast
+  , Episode
   , podcastName
   , podcastUrl
   , episodeName
   , episodeUrl
+  , episodeIsRead
   , DataError
   , DataApp
   , persistConfig
@@ -27,6 +29,7 @@ module Multipod.PodcastData
   , getAllPodcast
   , getPodcastFromName
   , getEpisodesFromPodcastId
+  , updateEpisodeIsRead
   ) where
 
 import Control.Monad.Catch hiding (catchIOError)
@@ -55,6 +58,7 @@ Episode
     name String
     url String
     podcastId PodcastId
+    isRead Bool
     deriving Show
 |]
 
@@ -75,7 +79,7 @@ instance Exception DataError
 
 mkPodcast title url = Podcast title url
 
-mkEpisode name url podcastId = Episode name url podcastId
+mkEpisode name url podcastId = Episode name url podcastId False
 
 getDataBasePath :: IO Text
 getDataBasePath = do
@@ -137,3 +141,13 @@ getEpisodesFromPodcastId
   :: MonadIO m
   => PodcastId -> ReaderT SqlBackend m [Entity Episode]
 getEpisodesFromPodcastId id = selectList [EpisodePodcastId ==. id] []
+
+updateEpisodeIsRead
+  :: (MonadIO m, MonadBaseControl IO m, MonadLogger m, MonadThrow m)
+  => Bool -> EpisodeId -> m ()
+updateEpisodeIsRead val id = do
+  dataBasePath <- liftIO getDataBasePath
+  withSqliteConn dataBasePath $
+    runSqlConn $
+    do runMigration migrateAll
+       update id [EpisodeIsRead =. val]
