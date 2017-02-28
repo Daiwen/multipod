@@ -75,6 +75,7 @@ displayPodcast name infos widget enctype = do
     setTitle (toHtml name)
     [whamlet|
             <form method=post action=@{PodcastR name} enctype=#{enctype}>
+                <button type=submit name=action value=selectall>Select all
                 ^{widget}
                 <button type=submit name=action value=read>Mark as read
                 <button type=submit name=action value=unread>Mark as unread
@@ -142,8 +143,8 @@ extractInfos podcast =
           episodes
     Nothing -> return []
 
-episodeListField :: [(Key Episode, Text, Text, Bool)] -> Field Handler [Key Episode]
-episodeListField titles =
+episodeListField :: Bool -> [(Key Episode, Text, Text, Bool)] -> Field Handler [Key Episode]
+episodeListField b titles =
   Field
   { fieldParse = \rawVals _fileVals -> return $ Right $ Just $ map (read . unpack) rawVals
   , fieldView =
@@ -155,38 +156,44 @@ episodeListField titles =
                   <li>
                      <a href=#{url}>
                         #{title} - #{showIsRead isRead}
-                     <input id=#{show id} name=#{nameAttr} *{otherAttrs} value=#{show id} type=checkbox>
+                     <input id=#{show id} name=#{nameAttr} *{otherAttrs} value=#{show id} type=checkbox :b:checked>
         |]
   , fieldEnctype = UrlEncoded
   }
 
 
-getPodcastR :: String -> Handler Html
-getPodcastR name = do
+podcastPageR :: Bool -> String -> Handler Html
+podcastPageR b name =  do
   podcastAddress <- runDB $ getPodcastFromName name
   infos <- extractInfos podcastAddress
-  (widget, enctype) <- generateFormPost $ renderDivs $ aopt (episodeListField infos) "" Nothing
+  (widget, enctype) <- generateFormPost $ renderDivs $ aopt (episodeListField b infos) "" Nothing
   displayPodcast name infos widget enctype
 
 
-handlePodcastResult :: FormResult (Maybe [Key Episode]) -> Handler ()
+
+getPodcastR :: String -> Handler Html
+getPodcastR = podcastPageR False
+
+handlePodcastResult :: FormResult (Maybe [Key Episode]) -> Handler Bool
 handlePodcastResult res = do
   action <- lookupPostParam "action"
   let value = case action of
-                Just   "read" -> True
-                Just "unread" -> False
-  case res of
-    (FormSuccess (Just ids)) -> do sequence $ map (updateEpisodeIsRead value) ids; return ()
-    _ -> return ()
+                Just   "read"    -> Just True
+                Just "unread"    -> Just False
+                Just "selectall" -> Nothing
+  case (res, value) of
+    (                     _,    Nothing) -> return True
+    (FormSuccess (Just ids), Just value) -> do sequence $ map (updateEpisodeIsRead value) ids; return False
+    _ -> return False
 
 
 postPodcastR :: String -> Handler Html
 postPodcastR name = do
   podcastAddress <- runDB $ getPodcastFromName name
   infos <- extractInfos podcastAddress
-  ((res, _), _) <- runFormPost $ renderDivs $ aopt (episodeListField infos) "" Nothing
-  handlePodcastResult res
-  getPodcastR name
+  ((res, _), _) <- runFormPost $ renderDivs $ aopt (episodeListField False infos) "" Nothing
+  b <- handlePodcastResult res
+  podcastPageR b name
 
 
 launchApp = do
