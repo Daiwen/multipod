@@ -154,9 +154,14 @@ episodeListField b titles =
             <ul>
                $forall (id, title, url, isRead) <- titles
                   <li>
-                     <a href=#{url}>
-                        #{title} - #{showIsRead isRead}
+                     #{title}
                      <input id=#{show id} name=#{nameAttr} *{otherAttrs} value=#{show id} type=checkbox :b:checked>
+                     <br>
+                     $if not isRead
+                        <audio controls>
+                           <source src=#{url} type="audio/mpeg">
+                           <a href=#{url}>
+                              #{url}
         |]
   , fieldEnctype = UrlEncoded
   }
