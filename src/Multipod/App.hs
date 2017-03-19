@@ -49,6 +49,7 @@ mkYesod
 / HomeR GET POST
 /podcast/#String PodcastR GET POST
 /readEpisode/ ReadEpisodeR POST
+/removePodcast/ RemovePodcastR POST
 |]
 
 type Form a = Html -> MForm Handler (FormResult a, Widget)
@@ -71,13 +72,15 @@ displayHome podcasts widget enctype = do
                 <button type=submit name=action value=update>Update
         |]
 
-markAsRead =
+markAsReadJ =
   toWidgetBody
     [julius|
            function markAsRead(id) {
               var xmlhttp = new XMLHttpRequest();
               xmlhttp.onreadystatechange = function() {
-                document.getElementById(id).outerHTML = "";
+                if (this.readyState == 4 && this.status == 200) {
+                  document.getElementById(id).outerHTML = "";
+                }
               };
               var params = "?id=" + id;
               xmlhttp.open("POST", "@{ReadEpisodeR}" + params);
@@ -85,18 +88,37 @@ markAsRead =
            }
     |]
 
+removePodcastJ =
+  toWidgetBody
+    [julius|
+           function removePodcast(name) {
+              var xmlhttp = new XMLHttpRequest();
+              xmlhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                  window.open("@{HomeR}","_self");
+                }
+              };
+              var params = "?name=" + name;
+              xmlhttp.open("POST", "@{RemovePodcastR}" + params);
+              xmlhttp.send(null);
+           }
+    |]
+
+
 displayPodcast name infos widget enctype = do
   defaultLayout $ do
     setTitle (toHtml name)
 
     [whamlet|
+            <button onClick=removePodcast('#{name}')>Remove
             <form method=post action=@{PodcastR name} enctype=#{enctype}>
                 <button type=submit name=action value=selectall>Select all
                 ^{widget}
                 <button type=submit name=action value=read>Mark as read
                 <button type=submit name=action value=unread>Mark as unread
         |]
-    markAsRead
+    markAsReadJ
+    removePodcastJ
   
 getHomeR :: Handler Html
 getHomeR = do
@@ -218,6 +240,7 @@ postPodcastR name = do
   b <- handlePodcastResult res
   podcastPageR b name
 
+
 handleReadEpisode :: Handler ()
 handleReadEpisode = do
     id <- lookupGetParam "id"
@@ -225,9 +248,24 @@ handleReadEpisode = do
       Just id -> updateEpisodeIsRead True $ read $ unpack id
       Nothing -> return ()
 
+
 postReadEpisodeR :: Handler ()
 postReadEpisodeR = do
     handleReadEpisode
+    return ()
+
+
+handleRemovePodcast :: Handler ()
+handleRemovePodcast = do
+    name <- lookupGetParam "name"
+    case name of
+      Just name -> removePodcast $ unpack name
+      Nothing   -> return ()
+
+
+postRemovePodcastR :: Handler ()
+postRemovePodcastR = do
+    handleRemovePodcast
     return ()
 
 

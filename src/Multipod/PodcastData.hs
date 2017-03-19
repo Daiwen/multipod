@@ -30,6 +30,7 @@ module Multipod.PodcastData
   , getPodcastFromName
   , getEpisodesFromPodcastId
   , updateEpisodeIsRead
+  , removePodcast
   ) where
 
 import Control.Monad.Catch hiding (catchIOError)
@@ -151,3 +152,18 @@ updateEpisodeIsRead val id = do
     runSqlConn $
     do runMigration migrateAll
        update id [EpisodeIsRead =. val]
+
+removePodcast
+  :: (MonadIO m, MonadBaseControl IO m, MonadLogger m, MonadThrow m)
+  => String -> m ()
+removePodcast name = do
+  dataBasePath <- liftIO getDataBasePath
+  withSqliteConn dataBasePath $
+    runSqlConn $
+    do runMigration migrateAll
+       p <- selectFirst [PodcastName ==. name] []
+       case p of
+         Just (Entity id _) -> do
+           delete id
+           deleteWhere [EpisodePodcastId ==. id]
+         Nothing -> return ()
