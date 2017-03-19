@@ -48,6 +48,7 @@ mkYesod
   [parseRoutes|
 / HomeR GET POST
 /podcast/#String PodcastR GET POST
+/readEpisode/ ReadEpisodeR POST
 |]
 
 type Form a = Html -> MForm Handler (FormResult a, Widget)
@@ -70,9 +71,24 @@ displayHome podcasts widget enctype = do
                 <button type=submit name=action value=update>Update
         |]
 
+markAsRead =
+  toWidgetBody
+    [julius|
+           function markAsRead(id) {
+              var xmlhttp = new XMLHttpRequest();
+              xmlhttp.onreadystatechange = function() {
+                document.getElementById(id).outerHTML = "";
+              };
+              var params = "?id=" + id;
+              xmlhttp.open("POST", "@{ReadEpisodeR}" + params);
+              xmlhttp.send(null);
+           }
+    |]
+
 displayPodcast name infos widget enctype = do
   defaultLayout $ do
     setTitle (toHtml name)
+
     [whamlet|
             <form method=post action=@{PodcastR name} enctype=#{enctype}>
                 <button type=submit name=action value=selectall>Select all
@@ -80,6 +96,7 @@ displayPodcast name infos widget enctype = do
                 <button type=submit name=action value=read>Mark as read
                 <button type=submit name=action value=unread>Mark as unread
         |]
+    markAsRead
   
 getHomeR :: Handler Html
 getHomeR = do
@@ -143,6 +160,7 @@ extractInfos podcast =
           episodes
     Nothing -> return []
 
+
 episodeListField :: Bool -> [(Key Episode, Text, Text, Bool)] -> Field Handler [Key Episode]
 episodeListField b titles =
   Field
@@ -155,10 +173,10 @@ episodeListField b titles =
                $forall (id, title, url, isRead) <- titles
                   <li>
                      #{title}
-                     <input id=#{show id} name=#{nameAttr} *{otherAttrs} value=#{show id} type=checkbox :b:checked>
+                     <input name=#{nameAttr} *{otherAttrs} value=#{show id} type=checkbox :b:checked>
                      <br>
                      $if not isRead
-                        <audio controls>
+                        <audio id=#{show id} controls onended="markAsRead('#{show id}')"}>
                            <source src=#{url} type="audio/mpeg">
                            <a href=#{url}>
                               #{url}
@@ -199,6 +217,18 @@ postPodcastR name = do
   ((res, _), _) <- runFormPost $ renderDivs $ aopt (episodeListField False infos) "" Nothing
   b <- handlePodcastResult res
   podcastPageR b name
+
+handleReadEpisode :: Handler ()
+handleReadEpisode = do
+    id <- lookupGetParam "id"
+    case id of
+      Just id -> updateEpisodeIsRead True $ read $ unpack id
+      Nothing -> return ()
+
+postReadEpisodeR :: Handler ()
+postReadEpisodeR = do
+    handleReadEpisode
+    return ()
 
 
 launchApp = do
