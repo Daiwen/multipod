@@ -1,0 +1,16 @@
+User
+    ident Text
+    password Text Maybe
+    UniqueUser ident
+    deriving Typeable
+Podcast
+    name String
+    url String
+    deriving Show
+Episode
+    name String
+    url String
+    podcastId PodcastId
+    isRead Bool
+    deriving Show
+

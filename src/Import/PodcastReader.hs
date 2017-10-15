@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Multipod.PodcastReader
+module Import.PodcastReader
   ( getEpisodeTitle
   , getEpisodeUrl
   , getPodcastTitle
@@ -8,10 +8,9 @@ module Multipod.PodcastReader
   , ReaderError
   ) where
 
-import Text.XML.Light.Input
 import Text.XML.Light.Types
-import Data.List hiding (append)
-import Data.Text (Text, pack, append)
+import Data.List
+import Data.Text (Text, pack)
 import Control.Monad.Catch
 
 data ReaderError =

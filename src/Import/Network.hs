@@ -1,5 +1,5 @@
-module Multipod.Network
-  ( requestBody
+module Import.Network
+  ( getBody
   , NetworkError
   ) where
 
@@ -14,10 +14,10 @@ data NetworkError =
 
 instance Exception NetworkError
 
-requestBody
+getBody
   :: (MonadIO m, MonadThrow m)
   => String -> m String
-requestBody address = do
+getBody address = do
   result <- liftIO $ simpleHTTP (getRequest address)
   case result of
     Left e -> throwM $ NetworkError e

@@ -1,0 +1,11 @@
+<ul>
+   $forall (id, title, url, isRead) <- titles
+      <li>
+         #{title}
+         <input name=#{nameAttr} *{otherAttrs} value=#{show id} type=checkbox :b:checked>
+         <br>
+         $if not isRead
+            <audio id=#{show id} controls onended="markAsRead('#{show id}')"}>
+               <source src=#{url} type="audio/mpeg">
+               <a href=#{url}>
+                  #{url}
