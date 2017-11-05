@@ -3,33 +3,54 @@
 module Handler.HomeSpec (spec) where
 
 import TestImport
+import Data.Aeson
 
 spec :: Spec
 spec = withApp $ do
 
     describe "Homepage" $ do
-        it "loads the index and checks it looks right" $ do
-          get HomeR
-          statusIs 200
-          htmlAnyContain "h1" "a modern framework for blazing fast websites"
+        it "asserts no access to my-account for anonymous users" $ do
+            get HomeR
+            statusIs 403
 
-          request $ do
+        it "asserts access to my-account for authenticated users" $ do
+            userEntity <- createUser "foo"
+            authenticateAs userEntity
+
+            get HomeR
+            statusIs 200
+
+            htmlAllContain ".add-button" "Add"
+            htmlAllContain ".update-button" "Update"
+
+        it "asserts all podcast are present" $ do
+            userEntity <- createUser "bar"
+            authenticateAs userEntity
+
+            get HomeR
+            statusIs 200
+            podcasts <- runDB $ selectList ([] :: [Filter Podcast]) []
+            htmlCount ".podcast-item" $ length podcasts
+
+        it "asserts adding a valid podcast increases the number" $ do
+            userEntity <- createUser "bar"
+            authenticateAs userEntity
+
+            get HomeR
+            statusIs 200
+            beforePodcasts <- runDB $ selectList ([] :: [Filter Podcast]) []
+            let bnb = length beforePodcasts
+
+            request $ do
               setMethod "POST"
               setUrl HomeR
               addToken
-              fileByLabel "Choose a file" "test/Spec.hs" "text/plain" -- talk about self-reference
-              byLabel "What's on the file?" "Some Content"
+              addPostParam "action" "add"
+              byLabel "RSS stream address." "http://podcasts.files.bbci.co.uk/b036f7w2.rss"
 
-          statusIs 200
-          -- more debugging printBody
-          htmlAllContain ".upload-response" "text/plain"
-          htmlAllContain ".upload-response" "Some Content"
+            statusIs 200
 
-        -- This is a simple example of using a database access in a test.  The
-        -- test will succeed for a fresh scaffolded site with an empty database,
-        -- but will fail on an existing database with a non-empty user table.
-        it "leaves the user table empty" $ do
-          get HomeR
-          statusIs 200
-          users <- runDB $ selectList ([] :: [Filter User]) []
-          assertEq "user table empty" 0 $ length users
+            afterPodcasts <- runDB $ selectList ([] :: [Filter Podcast]) []
+            let anb = length afterPodcasts
+            assertEq "Should be equal" anb $ bnb + 1
+            htmlCount ".podcast-item" $ bnb + 1

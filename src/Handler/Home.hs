@@ -11,7 +11,14 @@ import Text.XML.Light.Input as XML
 import Text.XML.Light.Types as XML
 
 form :: Form (Maybe Text)
-form = renderDivs $ aopt textField "" Nothing
+form = renderDivs $ aopt textField textSettings Nothing
+  where textSettings = FieldSettings
+         { fsLabel = "RSS stream address."
+         , fsTooltip = Nothing
+         , fsId = Nothing
+         , fsName = Nothing
+         , fsAttrs = []
+         }
 
 displayHome::[Entity Podcast] -> Widget -> Enctype -> Handler Html
 displayHome podcasts widget enctype = do

@@ -1,6 +1,6 @@
 <ul>
    $forall (id, title, url, isRead) <- titles
-      <li>
+      <li .episode-item>
          #{title}
          <input name=#{nameAttr} *{otherAttrs} value=#{show id} type=checkbox :b:checked>
          <br>
