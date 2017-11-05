@@ -7,7 +7,7 @@ license:             GPL-3
 license-file:        LICENSE
 author:              Quentin Lambert
 maintainer:          lambert.quentin@gmail.com
-copyright:           2016 Quentin Lambert
+copyright:           2016-2017 Quentin Lambert
 category:            Web
 build-type:          Simple
 extra-source-files:  ChangeLog.md
