@@ -1,8 +1,8 @@
 name:    multipod
 version: "0.0.1"
 synopsis:            A basic podcatcher.
-# description:         Please see README.md
-# homepage:            https://github.com/Daiwen/multipod#readme
+description:         Please see README.md
+homepage:            https://github.com/Daiwen/multipod#readme
 license:             GPL-3
 license-file:        LICENSE
 author:              Quentin Lambert
@@ -11,7 +11,7 @@ copyright:           2016-2017 Quentin Lambert
 category:            Web
 build-type:          Simple
 extra-source-files:  ChangeLog.md
-# extra-source-files:  README.md
+extra-source-files:  README.md
 
 
 dependencies:
