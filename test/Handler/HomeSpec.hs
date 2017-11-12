@@ -10,30 +10,21 @@ import TestImport
 
 spec :: Spec
 spec =
-    withApp $ do
+    withApp $
         describe "Homepage" $ do
             it "asserts no access to my-account for anonymous users" $ do
                 get HomeR
                 statusIs 403
             it "asserts access to my-account for authenticated users" $ do
-                userEntity <- createUser "foo"
-                authenticateAs userEntity
-                get HomeR
-                statusIs 200
+                createUserAndStatus "foo"
                 htmlAllContain ".add-button" "Add"
                 htmlAllContain ".update-button" "Update"
             it "asserts all podcast are present" $ do
-                userEntity <- createUser "bar"
-                authenticateAs userEntity
-                get HomeR
-                statusIs 200
+                createUserAndStatus "bar"
                 podcasts <- runDB $ selectList ([] :: [Filter Podcast]) []
                 htmlCount ".podcast-item" $ length podcasts
             it "asserts adding a valid podcast increases the number" $ do
-                userEntity <- createUser "bar"
-                authenticateAs userEntity
-                get HomeR
-                statusIs 200
+                createUserAndStatus "bar"
                 beforePodcasts <- runDB $ selectList ([] :: [Filter Podcast]) []
                 let bnb = length beforePodcasts
                 request $ do

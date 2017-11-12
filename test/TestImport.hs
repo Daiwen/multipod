@@ -1,4 +1,3 @@
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -28,6 +27,7 @@ import Yesod.Default.Config2 (loadYamlSettings, useEnv)
 import Yesod.Test as X
 
 import Control.Monad.Logger (runLoggingT)
+
 -- Wiping the database
 import Database.Persist.Sqlite
     ( createSqlitePoolFromInfo
@@ -84,9 +84,7 @@ wipeDB app
         sqlBackend <- ask
         let queries =
                 map
-                    (\t ->
-                         "DELETE FROM " ++
-                         (connEscapeName sqlBackend $ DBName t))
+                    ("DELETE FROM " ++ connEscapeName sqlBackend . DBName t)
                     tables
         forM_ queries (\q -> rawExecute q [])
 
@@ -99,7 +97,7 @@ getTables = do
 -- being set in test-settings.yaml, which enables dummy authentication in
 -- Foundation.hs
 authenticateAs :: Entity User -> YesodExample App ()
-authenticateAs (Entity _ u) = do
+authenticateAs (Entity _ u) =
     request $ do
         setMethod "POST"
         addPostParam "ident" $ userIdent u
@@ -109,6 +107,11 @@ authenticateAs (Entity _ u) = do
 -- checking is switched off in wipeDB for those database backends which need it.
 createUser :: Text -> YesodExample App (Entity User)
 createUser ident =
-    runDB $ do
-        user <- insertEntity User {userIdent = ident, userPassword = Nothing}
-        return user
+    runDB $ insertEntity User {userIdent = ident, userPassword = Nothing}
+
+createUserAndStatus :: Text -> YesodExample App ()
+createUserAndStatus name = do
+    userEntity <- createUser name
+    authenticateAs userEntity
+    get HomeR
+    statusIs 200

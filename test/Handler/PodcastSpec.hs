@@ -9,7 +9,7 @@ import TestImport
 
 spec :: Spec
 spec =
-    withApp $ do
+    withApp $
         it "asserts all episodes are present" $ do
             userEntity <- createUser "foo"
             authenticateAs userEntity

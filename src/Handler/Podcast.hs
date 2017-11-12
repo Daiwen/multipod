@@ -8,10 +8,10 @@ module Handler.Podcast where
 
 import Import
 
-import BasicPrelude hiding (map)
+import BasicPrelude hiding (map, mapM_)
 
 displayPodcast :: String -> Widget -> Enctype -> Handler Html
-displayPodcast name widget enctype = do
+displayPodcast name widget enctype =
     defaultLayout $ do
         setTitle (toHtml name)
         $(widgetFile "podcast")
@@ -68,7 +68,7 @@ handlePodcastResult res = do
     case (res, actionValue) of
         (_, Nothing) -> return True
         (FormSuccess (Just ids), Just value) -> do
-            _ <- sequence $ map (runDB . (updateEpisodeIsRead value)) ids
+            mapM_ (runDB . updateEpisodeIsRead value) ids
             return False
         _ -> return False
 

@@ -53,10 +53,10 @@ addEpisode episode = do
 addPodcast ::
        (MonadIO m, MonadThrow m) => Podcast -> ReaderT SqlBackend m PodcastId
 addPodcast podcast = do
-    do sameUrl <- selectList [PodcastUrl ==. podcastUrl podcast] []
-       case sameUrl of
-           [] -> insert podcast
-           _ -> throwM AlreadySync
+    sameUrl <- selectList [PodcastUrl ==. podcastUrl podcast] []
+    case sameUrl of
+        [] -> insert podcast
+        _ -> throwM AlreadySync
 
 updateEpisodeIsRead :: MonadIO m => Bool -> EpisodeId -> ReaderT SqlBackend m ()
 updateEpisodeIsRead val idEp = update idEp [EpisodeIsRead =. val]

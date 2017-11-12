@@ -8,7 +8,7 @@ import Control.Monad.IO.Class
 import Network.HTTP
 import Network.Stream
 
-data NetworkError =
+newtype NetworkError =
     NetworkError ConnError
     deriving (Eq, Show)
 

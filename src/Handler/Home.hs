@@ -24,7 +24,7 @@ form = renderDivs $ aopt textField textSettings Nothing
         }
 
 displayHome :: [Entity Podcast] -> Widget -> Enctype -> Handler Html
-displayHome podcasts widget enctype = do
+displayHome podcasts widget enctype =
     defaultLayout $ do
         setTitle "Synced podcasts"
         $(widgetFile "homepage")
@@ -58,16 +58,14 @@ addEpisodes idPod episode = do
 
 updatePodcasts :: Handler ()
 updatePodcasts = do
-    podcasts <- runDB $ getAllPodcast
+    podcasts <- runDB getAllPodcast
     let idurls =
             map (\(Entity idPod p) -> (idPod, pack $ podcastUrl p)) podcasts
-    _ <-
-        sequence $
-        map
-            (\(idPod, url) -> do
-                 (_, episodes) <- getTitleAndEpisodes url
-                 sequence $ map (addEpisodes idPod) episodes)
-            idurls
+    mapM_
+        (\(idPod, url) -> do
+             (_, episodes) <- getTitleAndEpisodes url
+             mapM_ (addEpisodes idPod) episodes)
+        idurls
     return ()
 
 handleHomeResult :: FormResult (Maybe Text) -> Handler ()
@@ -79,7 +77,7 @@ handleHomeResult res = do
             (title, episodes) <- getTitleAndEpisodes address
             idPod <-
                 runDB $ addPodcast $ Podcast (unpack title) (unpack address)
-            _ <- sequence $ map (addEpisodes idPod) episodes
+            _ <- mapM_ (addEpisodes idPod) episodes
             return ()
         _ -> return ()
 
@@ -87,5 +85,5 @@ postHomeR :: Handler Html
 postHomeR = do
     ((res, widget), enctype) <- runFormPost form
     handleHomeResult res
-    podcasts <- runDB $ getAllPodcast
+    podcasts <- runDB getAllPodcast
     displayHome podcasts widget enctype

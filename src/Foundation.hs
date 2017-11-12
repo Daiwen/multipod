@@ -69,9 +69,9 @@ instance Yesod App
                                                                       where
     approot =
         ApprootRequest $ \app req ->
-            case appRoot $ appSettings app of
-                Nothing -> getApprootText guessApproot app req
-                Just root -> root
+            (fromMaybe
+                 (getApprootText guessApproot app req)
+                 (appRoot $ appSettings app))
     -- Store session data on the client in encrypted cookies,
     -- default session idle timeout is 120 minutes
     makeSessionBackend _ =
@@ -96,19 +96,19 @@ instance Yesod App
         (title, parents) <- breadcrumbs
         -- Define the menu items of the header.
         let menuItems =
-                [ NavbarLeft $
+                [ NavbarLeft
                   MenuItem
                   { menuItemLabel = "Home"
                   , menuItemRoute = HomeR
                   , menuItemAccessCallback = True
                   }
-                , NavbarRight $
+                , NavbarRight
                   MenuItem
                   { menuItemLabel = "Login"
                   , menuItemRoute = AuthR LoginR
                   , menuItemAccessCallback = isNothing muser
                   }
-                , NavbarRight $
+                , NavbarRight
                   MenuItem
                   { menuItemLabel = "Logout"
                   , menuItemRoute = AuthR LogoutR
@@ -202,7 +202,7 @@ instance YesodAuth App where
                         User
                         {userIdent = credsIdent creds, userPassword = Nothing}
     -- You can add other plugins like Google Email, email or OAuth here
-    authPlugins app = [authOpenId Claimed []] ++ extraAuthPlugins
+    authPlugins app = authOpenId Claimed [] : extraAuthPlugins
         -- Enable authDummy login if enabled.
       where
         extraAuthPlugins = [authDummy | appAuthDummyLogin $ appSettings app]

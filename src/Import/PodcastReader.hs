@@ -13,7 +13,7 @@ import Data.List
 import Data.Text (Text, pack)
 import Text.XML.Light.Types
 
-data ReaderError =
+newtype ReaderError =
     BadRSS String
     deriving (Eq, Show)
 
@@ -51,7 +51,7 @@ getChannel cs =
             _ -> acc
 
 getItems :: [Content] -> [Element]
-getItems cs = foldl aux [] cs
+getItems = foldl aux []
   where
     aux acc c =
         case c of
