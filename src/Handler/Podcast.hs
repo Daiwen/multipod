@@ -15,8 +15,6 @@ displayPodcast name widget enctype =
     defaultLayout $ do
         setTitle (toHtml name)
         $(widgetFile "podcast")
-        $(widgetFile "mark-as-read")
-        $(widgetFile "remove-podcast")
 
 extractInfos ::
        Maybe (Entity Podcast) -> Handler [(Key Episode, Text, Text, Bool)]
