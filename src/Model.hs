@@ -66,6 +66,6 @@ removePodcast name = do
     p <- selectFirst [PodcastName ==. name] []
     case p of
         Just (Entity idPod _) -> do
-            delete idPod
             deleteWhere [EpisodePodcastId ==. idPod]
+            delete idPod
         Nothing -> return ()
