@@ -1,0 +1,18 @@
+function addPodcast() {
+   var address = $("#address").val();
+   var xmlhttp = new XMLHttpRequest();
+   xmlhttp.onreadystatechange = function() {
+     if (this.readyState == 4 && this.status == 200) {
+       $("#podcasts").load("@{HomeR} #podcast-list");
+     }
+   };
+   var params = "?address=" + address;
+   xmlhttp.open("POST", "@{AddPodcastR}" + params);
+   xmlhttp.send(null);
+}
+
+function updatePodcasts() {
+   var xmlhttp = new XMLHttpRequest();
+   xmlhttp.open("POST", "@{UpdatePodcastsR}");
+   xmlhttp.send(null);
+}

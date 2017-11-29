@@ -4,7 +4,9 @@
 /favicon.ico FaviconR GET
 /robots.txt RobotsR GET
 
-/ HomeR GET POST
+/ HomeR GET
 /podcast/#String PodcastR GET POST
 /readEpisode ReadEpisodeR POST
 /removePodcast RemovePodcastR POST
+/addPodcast AddPodcastR POST
+/updatePodcasts UpdatePodcastsR POST

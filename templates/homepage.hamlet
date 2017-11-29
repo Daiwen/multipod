@@ -1,10 +1,10 @@
-<div>
-    <ul .podcast-list>
+<div #podcasts>
+    <ul #podcast-list .podcast-list>
         $forall Entity _ podcast <- podcasts
             <li .podcast-item>
                 <a href=@{PodcastR $ podcastName podcast}>
                     #{podcastName podcast}
-    <form method=post action=@{HomeR} enctype=#{enctype}>
-        ^{widget}
-        <button #add .add-button type=submit name=action value=add>Add
-        <button #update.update-button type=submit name=action value=update>Update
+<div>
+    <input #address type="text">
+    <button #add .add-button onClick=addPodcast()>Add
+    <button #update .update-button onClick=updatePodcasts()>Update
