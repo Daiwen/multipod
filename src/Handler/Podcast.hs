@@ -13,6 +13,7 @@ import BasicPrelude hiding (map, mapM_)
 displayPodcast :: String -> Widget -> Enctype -> Handler Html
 displayPodcast name widget enctype =
     defaultLayout $ do
+        addScriptRemote "http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"
         setTitle (toHtml name)
         $(widgetFile "podcast")
 
