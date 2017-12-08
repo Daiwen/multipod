@@ -56,7 +56,7 @@ import System.Log.FastLogger (defaultBufSize, newStdoutLoggerSet, toLogStr)
 import Handler.Common
 import Handler.Home
 import Handler.Podcast
-import Handler.ReadEpisode
+import Handler.Episode
 import Handler.RemovePodcast
 import Handler.HandlePodcasts
 

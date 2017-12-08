@@ -10,14 +10,42 @@ function removePodcast(name) {
    xmlhttp.send(null);
 }
 
-function markAsRead(id) {
+function markAsRead(ids) {
    var xmlhttp = new XMLHttpRequest();
    xmlhttp.onreadystatechange = function() {
      if (this.readyState == 4 && this.status == 200) {
        $("#episodes").load("@{PodcastR name} #episode-list");
      }
    };
-   var params = "?id=" + id;
-   xmlhttp.open("POST", "@{ReadEpisodeR}" + params);
+   var params = "?ids=" + ids;
+   xmlhttp.open("POST", "@{ReadEpisodesR}" + params);
    xmlhttp.send(null);
+}
+
+function markAsUnread(ids) {
+   var xmlhttp = new XMLHttpRequest();
+   xmlhttp.onreadystatechange = function() {
+     if (this.readyState == 4 && this.status == 200) {
+       $("#episodes").load("@{PodcastR name} #episode-list");
+     }
+   };
+   var params = "?ids=" + ids;
+   xmlhttp.open("POST", "@{UnreadEpisodesR}" + params);
+   xmlhttp.send(null);
+}
+
+function readSelected() {
+   var vals = [];
+   $( ".episode-checkbox:checked" ).each(function() {
+      vals.push($(this).val());
+   });
+   markAsRead(vals);
+}
+
+function unreadSelected() {
+   var vals = [];
+   $( ".episode-checkbox:checked" ).each(function() {
+      vals.push($(this).val());
+   });
+   markAsUnread(vals);
 }

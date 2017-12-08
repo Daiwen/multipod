@@ -61,6 +61,9 @@ addPodcast podcast = do
 updateEpisodeIsRead :: MonadIO m => Bool -> EpisodeId -> ReaderT SqlBackend m ()
 updateEpisodeIsRead val idEp = update idEp [EpisodeIsRead =. val]
 
+updateEpisodesIsRead :: MonadIO m => Bool -> [EpisodeId] -> ReaderT SqlBackend m ()
+updateEpisodesIsRead val idEps = mapM_ (\ep -> update ep [EpisodeIsRead =. val]) idEps
+
 removePodcast :: MonadIO m => String -> ReaderT SqlBackend m ()
 removePodcast name = do
     p <- selectFirst [PodcastName ==. name] []

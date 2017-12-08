@@ -4,5 +4,6 @@
   <form method=post action=@{PodcastR name} enctype=#{enctype}>
     <button type=submit name=action value=selectall>Select all
     ^{widget}
-    <button type=submit name=action value=read>Mark as read
-    <button type=submit name=action value=unread>Mark as unread
+<div>
+    <button #read .read onClick=readSelected()>Mark as read
+    <button #unread .unread onClick=unreadSelected()>Mark as unread

@@ -140,7 +140,8 @@ instance Yesod App
     isAuthorized (StaticR _) _ = return Authorized
     isAuthorized (PodcastR _) _ = isAuthenticated
     isAuthorized HomeR _ = isAuthenticated
-    isAuthorized ReadEpisodeR _ = isAuthenticated
+    isAuthorized ReadEpisodesR _ = isAuthenticated
+    isAuthorized UnreadEpisodesR _ = isAuthenticated
     isAuthorized RemovePodcastR _ = isAuthenticated
     isAuthorized AddPodcastR _ = isAuthenticated
     isAuthorized UpdatePodcastsR _ = isAuthenticated

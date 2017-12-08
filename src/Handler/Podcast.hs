@@ -55,28 +55,5 @@ podcastPageR b name = do
 getPodcastR :: String -> Handler Html
 getPodcastR = podcastPageR False
 
-handlePodcastResult :: FormResult (Maybe [Key Episode]) -> Handler Bool
-handlePodcastResult res = do
-    action <- lookupPostParam "action"
-    let actionValue =
-            case action of
-                Just "read" -> Just True
-                Just "unread" -> Just False
-                Just "selectall" -> Nothing
-                _ -> Nothing
-    case (res, actionValue) of
-        (_, Nothing) -> return True
-        (FormSuccess (Just ids), Just value) -> do
-            mapM_ (runDB . updateEpisodeIsRead value) ids
-            return False
-        _ -> return False
-
 postPodcastR :: String -> Handler Html
-postPodcastR name = do
-    podcastAddress <- runDB $ getPodcastFromName name
-    infos <- extractInfos podcastAddress
-    ((res, _), _) <-
-        runFormPost $
-        renderDivs $ aopt (episodeListField False infos) "" Nothing
-    b <- handlePodcastResult res
-    podcastPageR b name
+postPodcastR = podcastPageR True
