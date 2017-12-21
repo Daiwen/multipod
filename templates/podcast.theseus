@@ -1,3 +1,6 @@
+/// <reference types="node" />
+/// <reference types="jquery" />
+
 function removePodcast(name) {
    var xmlhttp = new XMLHttpRequest();
    xmlhttp.onreadystatechange = function() {

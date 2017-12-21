@@ -1,3 +1,6 @@
+/// <reference types="node" />
+/// <reference types="jquery" />
+
 function addPodcast() {
    var address = $("#address").val();
    var xmlhttp = new XMLHttpRequest();

@@ -19,12 +19,9 @@ import Data.Yaml (decodeEither')
 import Database.Persist.Sqlite (SqliteConf)
 import Language.Haskell.TH.Syntax (Exp, Name, Q)
 import Network.Wai.Handler.Warp (HostPreference)
+import Text.TypeScript
 import Yesod.Default.Config2 (applyEnvValue, configSettingsYml)
 import Yesod.Default.Util
-    ( WidgetFileSettings
-    , widgetFileNoReload
-    , widgetFileReload
-    )
 
 -- | Runtime settings to configure this application. These settings can be
 -- loaded from various sources: defaults, environment variables, config files,
@@ -96,8 +93,18 @@ instance FromJSON AppSettings where
 --
 -- https://github.com/yesodweb/yesod/wiki/Overriding-widgetFile
 widgetFileSettings :: WidgetFileSettings
-widgetFileSettings = def
-
+widgetFileSettings =
+    def
+    { wfsLanguages =
+          \hset ->
+              defaultTemplateLanguages hset ++
+              [ TemplateLanguage
+                    True
+                    "theseus"
+                    Text.TypeScript.typeScriptFile
+                    Text.TypeScript.typeScriptFileReload
+              ]
+    }
 -- | How static files should be combined.
 combineSettings :: CombineSettings
 combineSettings = def
