@@ -1,21 +1,174 @@
 /// <reference types="node" />
 /// <reference types="jquery" />
+/// <reference types="react" />
 
-function addPodcast() {
-   var address = $("#address").val();
-   var xmlhttp = new XMLHttpRequest();
-   xmlhttp.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-         $("#podcasts").load("@{HomeR} #podcast-list");
-      }
-   };
-   var params = "?address=" + address;
-   xmlhttp.open("POST", "@{AddPodcastR}" + params);
-   xmlhttp.send(null);
+interface PodcastProperties {
+   name: string
+   address: string
 }
 
-function updatePodcasts() {
-   var xmlhttp = new XMLHttpRequest();
-   xmlhttp.open("POST", "@{UpdatePodcastsR}");
-   xmlhttp.send(null);
+class Podcast extends React.Component<PodcastProperties, {}> {
+   render() {
+      const name = this.props.name;
+      const address = this.props.address;
+      return (
+         <div>
+            <a href= {address}> {name} </a>
+         </div>
+      );
+   }
 }
+
+interface AddState {
+   value: string
+}
+
+interface AddPodcastProperties {
+   onAddPodcast: () => void
+}
+
+
+class AddPodcast extends React.Component<AddPodcastProperties, AddState> {
+   constructor(props) {
+      super(props);
+      this.state = {value: ''};
+
+      this.handleSubmit = this.handleSubmit.bind(this);
+      this.handleChange = this.handleChange.bind(this);
+   }
+
+   handleChange(event) {
+      this.setState({value: event.target.value});
+   }
+
+   handleSubmit(event) {
+      var address = this.state.value;
+      var xmlhttp = new XMLHttpRequest();
+      var props = this.props;
+
+      xmlhttp.onreadystatechange = function() {
+         if (this.readyState == 4 && this.status == 200) {
+            props.onAddPodcast();
+            $("#podcasts").load("@{HomeR} #podcast-list");
+         }
+      };
+      var params = "?address=" + address;
+      xmlhttp.open("POST", "@{AddPodcastR}" + params);
+      xmlhttp.send(null);
+      event.preventDefault();
+      this.setState({value: ''});
+   }
+
+   render() {
+      return (
+         <div>
+            <form onSubmit={this.handleSubmit}>
+               <label>
+                  <input type="text" value={this.state.value} onChange={this.handleChange} />
+               </label>
+               <input type="submit" value="Add" />
+            </form>
+         </div>
+      );
+   }
+}
+
+class RefreshPodcast extends React.Component<{}, {}> {
+   constructor(props) {
+      super(props);
+
+      this.handleUpdate = this.handleUpdate.bind(this);
+   }
+
+   handleUpdate() {
+      var xmlhttp = new XMLHttpRequest();
+      xmlhttp.open("POST", "@{UpdatePodcastsR}");
+      xmlhttp.send(null);
+   }
+
+   render() {
+      return (
+         <div>
+            <button id="update" onClick={this.handleUpdate}>Update</button>
+         </div>
+      );
+   }
+}
+
+interface PodcatcherState {
+   podcasts: PodcastProperties[];
+}
+
+class PodcastCollection extends React.Component<PodcatcherState, {}> {
+   render() {
+      const podcasts = [];
+
+      this.props.podcasts.forEach((podcast) => {
+         podcasts.push(
+            <Podcast
+               address = {podcast.address}
+               name = {podcast.name} />
+         );
+      });
+
+      return (
+         <div>
+            {podcasts}
+         </div>
+      );
+   }
+}
+
+class ActionBar extends React.Component<AddPodcastProperties, {}> {
+   render() {
+      return (
+         <div>
+            <AddPodcast onAddPodcast={this.props.onAddPodcast} />
+            <RefreshPodcast />
+         </div>
+      );
+   }
+}
+
+class Podcatcher extends React.Component<{}, PodcatcherState> {
+   constructor(props) {
+      super(props);
+      var local = this;
+      this.state = {podcasts: []};
+
+
+      $.getJSON('@{PodcastsR}', function (data) {
+          local.setState({podcasts: data});
+      });
+
+
+      this.handleAddPodcast = this.handleAddPodcast.bind(this);
+   }
+
+   handleAddPodcast () {
+      var npodcasts = [];
+      var local = this;
+
+      $.getJSON('@{PodcastsR}', function (data) {
+         local.setState({podcasts: data});
+      });
+   }
+
+   render () {
+      return (
+         <div>
+            <ActionBar
+               onAddPodcast={this.handleAddPodcast}
+            />
+            <PodcastCollection
+               podcasts={this.state.podcasts}
+            />
+         </div>
+      );
+   }
+}
+
+ReactDOM.render(
+   <Podcatcher />,
+   document.getElementById("container")
+);

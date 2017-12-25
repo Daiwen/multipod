@@ -1,10 +1,1 @@
-<div #podcasts>
-    <ul #podcast-list .podcast-list>
-        $forall Entity _ podcast <- podcasts
-            <li .podcast-item>
-                <a href=@{PodcastR $ podcastName podcast}>
-                    #{podcastName podcast}
-<div>
-    <input #address type="text">
-    <button #add .add-button onClick=addPodcast()>Add
-    <button #update .update-button onClick=updatePodcasts()>Update
+<div #container>

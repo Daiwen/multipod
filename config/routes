@@ -11,3 +11,4 @@
 /removePodcast RemovePodcastR POST
 /addPodcast AddPodcastR POST
 /updatePodcasts UpdatePodcastsR POST
+/podcasts PodcastsR GET

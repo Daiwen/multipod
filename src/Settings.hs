@@ -101,8 +101,8 @@ widgetFileSettings =
               [ TemplateLanguage
                     True
                     "theseus"
-                    Text.TypeScript.typeScriptFile
-                    Text.TypeScript.typeScriptFileReload
+                    Text.TypeScript.typeScriptJSXFile
+                    Text.TypeScript.typeScriptJSXFileReload
               ]
     }
 -- | How static files should be combined.

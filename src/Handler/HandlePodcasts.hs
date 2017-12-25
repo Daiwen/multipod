@@ -9,6 +9,7 @@ import Import
 
 import Text.XML.Light.Input as XML
 import Text.XML.Light.Types as XML
+import Yesod.Core.Json (returnJson)
 
 
 
@@ -64,3 +65,16 @@ postAddPodcastR :: Handler ()
 postAddPodcastR = do
     handleAddPodcast
     return ()
+
+
+getPodcastsR :: Handler Value
+getPodcastsR = do
+    renderUrl <- getUrlRender
+    podcasts <- runDB getAllPodcast
+    returnJson $ map (nameAndAddress renderUrl) podcasts
+  where
+    nameAndAddress render p =
+        let pod = entityVal p
+            name = podcastName pod
+            address = render $ PodcastR name
+        in object $ ["name" .= name, "address" .= address]
