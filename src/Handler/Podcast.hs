@@ -7,53 +7,34 @@
 module Handler.Podcast where
 
 import Import
-
-import BasicPrelude hiding (map, mapM_)
-
-displayPodcast :: String -> Widget -> Enctype -> Handler Html
-displayPodcast name widget enctype =
-    defaultLayout $ do
-        addScriptRemote "http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"
-        setTitle (toHtml name)
-        $(widgetFile "podcast")
-
-extractInfos ::
-       Maybe (Entity Podcast) -> Handler [(Key Episode, Text, Text, Bool)]
-extractInfos podcast =
-    case podcast of
-        Just (Entity idPod _) -> do
-            episodes <- runDB $ getEpisodesFromPodcastId idPod
-            return $
-                map
-                    (\(Entity idEp e) ->
-                         ( idEp
-                         , pack $ episodeName e
-                         , pack $ episodeUrl e
-                         , episodeIsRead e))
-                    episodes
-        Nothing -> return []
-
-episodeListField ::
-       Bool -> [(Key Episode, Text, Text, Bool)] -> Field Handler [Key Episode]
-episodeListField b titles =
-    Field
-    { fieldParse =
-          \rawVals _fileVals -> return $ Right $ Just $ map read rawVals
-    , fieldView = \_ nameAttr otherAttrs _ _ -> $(widgetFile "episode-list")
-    , fieldEnctype = UrlEncoded
-    }
-
-podcastPageR :: Bool -> String -> Handler Html
-podcastPageR b name = do
-    podcastAddress <- runDB $ getPodcastFromName name
-    infos <- extractInfos podcastAddress
-    (widget, enctype) <-
-        generateFormPost $
-        renderDivs $ aopt (episodeListField b infos) "" Nothing
-    displayPodcast name widget enctype
+import Text.Julius
 
 getPodcastR :: String -> Handler Html
-getPodcastR = podcastPageR False
+getPodcastR podName =
+    defaultLayout $ do
+        addScriptRemote
+            "http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"
+        addScriptRemote
+            "https://unpkg.com/react@16.2.0/umd/react.production.min.js"
+        addScriptRemote
+            "https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"
+        setTitle (toHtml podName)
+        let name = rawJS podName
+        $(widgetFile "podcast")
 
-postPodcastR :: String -> Handler Html
-postPodcastR = podcastPageR True
+getEpisodesR :: String -> Handler Value
+getEpisodesR name = do
+    pod <- runDB $ getPodcastFromName name
+    case pod of
+        Just (Entity idPod _) -> do
+            podcasts <- runDB $ getEpisodesFromPodcastId idPod
+            returnJson $ map episodeData podcasts
+        Nothing -> returnJson ([] :: [Value])
+  where
+    episodeData (Entity key episode) =
+        let idEp = show key
+            nameEp = episodeName episode
+            url = episodeUrl episode
+            isRead = episodeIsRead episode
+        in object $
+           ["id" .= idEp, "url" .= url, "title" .= nameEp, "isRead" .= isRead]

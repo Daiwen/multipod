@@ -1,9 +1,1 @@
-<div>
-  <button onClick=removePodcast('#{name}')>Remove
-<div>
-  <form method=post action=@{PodcastR name} enctype=#{enctype}>
-    <button type=submit name=action value=selectall>Select all
-    ^{widget}
-<div>
-    <button #read .read onClick=readSelected()>Mark as read
-    <button #unread .unread onClick=unreadSelected()>Mark as unread
+<div #container>

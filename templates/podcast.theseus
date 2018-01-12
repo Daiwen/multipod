@@ -2,6 +2,7 @@
 /// <reference types="jquery" />
 /// <reference types="react" />
 
+
 function removePodcast(name : string) {
    var xmlhttp = new XMLHttpRequest();
    xmlhttp.onreadystatechange = function() {
@@ -14,11 +15,12 @@ function removePodcast(name : string) {
    xmlhttp.send(null);
 }
 
-function markAsRead(ids : string[]) {
+
+function markAsRead(ids : string[], callback: () => void) {
    var xmlhttp = new XMLHttpRequest();
    xmlhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
-         $("#episodes").load("@{PodcastR name} #episode-list");
+         callback();
       }
    };
    var params = "?ids=" + ids;
@@ -26,11 +28,12 @@ function markAsRead(ids : string[]) {
    xmlhttp.send(null);
 }
 
-function markAsUnread(ids : string[]) {
+
+function markAsUnread(ids : string[], callback: () => void) {
    var xmlhttp = new XMLHttpRequest();
    xmlhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
-         $("#episodes").load("@{PodcastR name} #episode-list");
+         callback();
       }
    };
    var params = "?ids=" + ids;
@@ -38,18 +41,262 @@ function markAsUnread(ids : string[]) {
    xmlhttp.send(null);
 }
 
-function readSelected() {
-   var vals = [];
-   $( ".episode-checkbox:checked" ).each(function() {
-         vals.push($(this).val());
-         });
-   markAsRead(vals);
+
+interface EpisodeData {
+   id: string
+   title: string
+   url: string
+   isRead: boolean
 }
 
-function unreadSelected() {
-   var vals = [];
-   $( ".episode-checkbox:checked" ).each(function() {
-         vals.push($(this).val());
-         });
-   markAsUnread(vals);
+
+interface EpisodeProperties extends EpisodeData {
+   isSelected: boolean
+   markAsRead: (string) => void
+   handleSelection: (boolean, string) => void
 }
+
+class Episode extends React.Component<EpisodeProperties, {}> {
+   constructor(props) {
+      super(props);
+
+      this.handleInputChange = this.handleInputChange.bind(this);
+   }
+
+   handleInputChange(event) {
+      const target = event.target;
+      if (target.type === 'checkbox') {
+         this.props.handleSelection(target.checked, target.value);
+      }
+   }
+
+   render() {
+      const id = this.props.id;
+      const title = this.props.title;
+      const url = this.props.url;
+      let audio = null;
+      if (!this.props.isRead) {
+         audio =
+            <audio id={id} controls onEnded={() => {markAsRead([id], () => {this.props.markAsRead(id)})}}>
+               <source src={url} type="audio/mpeg" />
+               <a href={url}> {url} </a>
+            </audio>;
+      }
+
+      return (
+         <li>
+            {title}
+            <input
+               name={title}
+               value={id}
+               type="checkbox"
+               checked={this.props.isSelected}
+               onChange={this.handleInputChange} />
+            <br/>
+            {audio}
+         </li>
+      );
+   }
+}
+
+
+interface SelectAllProperties {
+   selectAll: () => void
+}
+
+class SelectAll extends React.Component<SelectAllProperties, {}> {
+   render() {
+      return (
+         <button onClick={this.props.selectAll}>Select all</button>
+      );
+   }
+}
+
+
+interface TouchProperties {
+   touchSelected: (boolean) => void
+}
+
+
+class Read extends React.Component<TouchProperties, {}> {
+   render() {
+      return (
+         <button onClick={() => {this.props.touchSelected(true)}}>Mark as read</button>
+      );
+   }
+}
+
+
+class Unread extends React.Component<TouchProperties, {}> {
+   render() {
+      return (
+         <button onClick={() => {this.props.touchSelected(false)}}>Mark as unread</button>
+      );
+   }
+}
+
+
+class Remove extends React.Component<{}, {}> {
+   render() {
+      return (
+         <button onClick={() => {removePodcast("#{name}")}}>Remove</button>
+      );
+   }
+}
+
+
+interface CollectionProperties {
+   readEpisodes: {[k: string]: boolean};
+   selectedEpisodes: {[k: string]: boolean};
+   episodes: EpisodeData[]
+   markAsRead: (string) => void
+   handleSelection: (boolean, string) => void
+}
+
+
+class EpisodeCollection extends React.Component<CollectionProperties, {}> {
+   render() {
+      const episodes = [];
+
+      this.props.episodes.forEach((episode) => {
+         episodes.push(
+            <Episode
+               id = {episode.id}
+               title = {episode.title}
+               url = {episode.url}
+               isRead = {this.props.readEpisodes[episode.id]}
+               isSelected = {this.props.selectedEpisodes[episode.id]}
+               markAsRead= {this.props.markAsRead}
+               handleSelection = {this.props.handleSelection} />
+         );
+      });
+
+      return (
+         <div>
+            <ul>
+               {episodes}
+            </ul>
+         </div>
+      );
+   }
+}
+
+
+interface ActionBarProperties extends TouchProperties, SelectAllProperties {}
+
+
+class ActionBar extends React.Component<ActionBarProperties, {}> {
+   render() {
+      return (
+         <div>
+            <SelectAll selectAll={this.props.selectAll} />
+            <Read touchSelected={this.props.touchSelected} />
+            <Unread touchSelected={this.props.touchSelected} />
+            <Remove />
+         </div>
+      );
+   }
+}
+
+
+interface PodcastProperties {
+   episodes: EpisodeData[]
+}
+
+interface PodcastState {
+   readEpisodes: {[k: string]: boolean};
+   selectedEpisodes: {[k: string]: boolean};
+}
+
+class Podcast extends React.Component<PodcastProperties, PodcastState> {
+   constructor(props) {
+      super(props);
+      var readEpisodes = {};
+
+      this.props.episodes.forEach((episode) => {
+         readEpisodes[episode.id] = episode.isRead;
+      });
+
+      this.state = { readEpisodes: readEpisodes,
+                     selectedEpisodes: {}};
+
+      this.selectAll = this.selectAll.bind(this);
+      this.touchEpisodes = this.touchEpisodes.bind(this);
+      this.touchSelected = this.touchSelected.bind(this);
+      this.handleSelection = this.handleSelection.bind(this);
+   }
+
+   //Change whether an episode is read
+   touchEpisodes(b:boolean, ids:string[]) {
+      var episodes = this.state.readEpisodes;
+      ids.forEach((id) => {
+         episodes[id] = b;
+      });
+      var local = this;
+
+      if (b) {
+         markAsRead(ids, () => {local.setState({readEpisodes: episodes});});
+      } else {
+         markAsUnread(ids, () => {local.setState({readEpisodes: episodes});});
+      }
+   }
+
+   markAsRead(id){
+      this.touchEpisodes(true, [id]);
+   }
+
+   //Change whether the selected episodes are read
+   touchSelected(b:boolean) {
+      var ids = [];
+      Object.keys(this.state.selectedEpisodes).forEach(function(key, index) {
+         if (this[key]) {
+            ids.push(key);
+         }
+      }, this.state.selectedEpisodes);
+
+      this.touchEpisodes(b, ids);
+
+      this.setState({selectedEpisodes: {}})
+   }
+
+   //Change whether an episode is selected
+   handleSelection(b:boolean, id:string) {
+      var selected = this.state.selectedEpisodes
+      selected[id] = b;
+
+      this.setState({selectedEpisodes: selected});
+   }
+
+   selectAll() {
+      var local = this;
+      this.props.episodes.forEach((episode) => {
+         local.handleSelection(true, episode.id)
+      });
+   }
+
+   render() {
+      return (
+         <div>
+            <ActionBar
+               selectAll={this.selectAll}
+               touchSelected={this.touchSelected}
+            />
+            <EpisodeCollection
+               selectedEpisodes={this.state.selectedEpisodes}
+               readEpisodes={this.state.readEpisodes}
+               episodes={this.props.episodes}
+               markAsRead={this.markAsRead}
+               handleSelection={this.handleSelection}
+            />
+         </div>
+      );
+   }
+}
+
+
+$.getJSON('@{EpisodesR podName}', function (data) {
+   ReactDOM.render(
+      <Podcast episodes={data} />,
+      document.getElementById("container")
+   );
+});

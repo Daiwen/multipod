@@ -5,10 +5,11 @@
 /robots.txt RobotsR GET
 
 / HomeR GET
-/podcast/#String PodcastR GET POST
+/podcast/#String PodcastR GET
 /readEpisodes ReadEpisodesR POST
 /unreadEpisodes UnreadEpisodesR POST
 /removePodcast RemovePodcastR POST
 /addPodcast AddPodcastR POST
 /updatePodcasts UpdatePodcastsR POST
 /podcasts PodcastsR GET
+/episodes/#String EpisodesR GET
