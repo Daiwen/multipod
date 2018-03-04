@@ -71,3 +71,13 @@
 #message {
     margin-bottom: 40px;
 }
+
+.action-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 50%;
+  border-radius: 20px;
+  background-color: lightblue;
+  margin: auto;
+}

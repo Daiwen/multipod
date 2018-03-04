@@ -12,9 +12,11 @@ class Podcast extends React.Component<PodcastProperties, {}> {
       const name = this.props.name;
       const address = this.props.address;
       return (
-         <div>
-            <a href= {address}> {name} </a>
-         </div>
+         <a className="podcast-link" href= {address}>
+            <div className="podcast-item">
+               {name}
+            </div>
+         </a>
       );
    }
 }
@@ -61,12 +63,11 @@ class AddPodcast extends React.Component<AddPodcastProperties, AddState> {
 
    render() {
       return (
-         <div>
+         <div className="action-item">
             <form onSubmit={this.handleSubmit}>
-               <label>
-                  <input type="text" value={this.state.value} onChange={this.handleChange} />
-               </label>
-               <input type="submit" value="Add" />
+               <input type="text" value={this.state.value} onChange={this.handleChange} />
+
+               <input type="image" src="@{HomeR}/static/img/plus-circle.svg" />
             </form>
          </div>
       );
@@ -88,8 +89,8 @@ class RefreshPodcast extends React.Component<{}, {}> {
 
    render() {
       return (
-         <div>
-            <button id="update" onClick={this.handleUpdate}>Update</button>
+         <div className="action-item">
+            <input id="update" onClick={this.handleUpdate} type="image" src= "@{HomeR}/static/img/rotate-cw.svg" />
          </div>
       );
    }
@@ -112,7 +113,7 @@ class PodcastCollection extends React.Component<PodcatcherState, {}> {
       });
 
       return (
-         <div>
+         <div className="podcast-collection">
             {podcasts}
          </div>
       );
@@ -122,7 +123,7 @@ class PodcastCollection extends React.Component<PodcatcherState, {}> {
 class ActionBar extends React.Component<AddPodcastProperties, {}> {
    render() {
       return (
-         <div>
+         <div className="action-bar">
             <AddPodcast onAddPodcast={this.props.onAddPodcast} />
             <RefreshPodcast />
          </div>

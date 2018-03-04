@@ -1,0 +1,16 @@
+.podcast-collection {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.podcast-link {
+  display: block;
+}
+
+.podcast-item {
+  width: 150px;
+  height: 150px;
+  margin: 10px;
+  border: 1px solid blue;
+  display: inline-block;
+}
