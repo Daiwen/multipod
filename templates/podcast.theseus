@@ -107,7 +107,7 @@ interface SelectAllProperties {
 class SelectAll extends React.Component<SelectAllProperties, {}> {
    render() {
       return (
-         <button onClick={this.props.selectAll}>Select all</button>
+         <input onClick={this.props.selectAll} type="image" src= "@{HomeR}/static/img/list.svg" />
       );
    }
 }
@@ -121,7 +121,7 @@ interface TouchProperties {
 class Read extends React.Component<TouchProperties, {}> {
    render() {
       return (
-         <button onClick={() => {this.props.touchSelected(true)}}>Mark as read</button>
+         <input onClick={() => {this.props.touchSelected(true)}} type="image" src= "@{HomeR}/static/img/book.svg" />
       );
    }
 }
@@ -130,7 +130,7 @@ class Read extends React.Component<TouchProperties, {}> {
 class Unread extends React.Component<TouchProperties, {}> {
    render() {
       return (
-         <button onClick={() => {this.props.touchSelected(false)}}>Mark as unread</button>
+         <input onClick={() => {this.props.touchSelected(false)}} type="image" src= "@{HomeR}/static/img/book-open.svg" />
       );
    }
 }
@@ -139,7 +139,7 @@ class Unread extends React.Component<TouchProperties, {}> {
 class Remove extends React.Component<{}, {}> {
    render() {
       return (
-         <button onClick={() => {removePodcast("#{name}")}}>Remove</button>
+         <input onClick={() => {removePodcast("#{name}")}} type="image" src= "@{HomeR}/static/img/trash-2.svg" />
       );
    }
 }
@@ -188,7 +188,7 @@ interface ActionBarProperties extends TouchProperties, SelectAllProperties {}
 class ActionBar extends React.Component<ActionBarProperties, {}> {
    render() {
       return (
-         <div>
+         <div className="action-bar">
             <SelectAll selectAll={this.props.selectAll} />
             <Read touchSelected={this.props.touchSelected} />
             <Unread touchSelected={this.props.touchSelected} />
