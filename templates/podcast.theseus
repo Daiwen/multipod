@@ -50,10 +50,12 @@ interface EpisodeData {
 }
 
 
-interface EpisodeProperties extends EpisodeData {
+interface EpisodeProperties {
+   data: EpisodeData
    isSelected: boolean
-   markAsRead: (string) => void
    handleSelection: (boolean, string) => void
+   setCurrentEpisode: (EpisodeData) => void
+   isCurrentEpisode: boolean
 }
 
 class Episode extends React.Component<EpisodeProperties, {}> {
@@ -63,38 +65,75 @@ class Episode extends React.Component<EpisodeProperties, {}> {
       this.handleInputChange = this.handleInputChange.bind(this);
    }
 
-   handleInputChange(event) {
-      const target = event.target;
-      if (target.type === 'checkbox') {
-         this.props.handleSelection(target.checked, target.value);
-      }
+   handleInputChange() {
+      this.props.handleSelection(!this.props.isSelected, this.props.data.id);
    }
 
    render() {
-      const id = this.props.id;
-      const title = this.props.title;
-      const url = this.props.url;
-      let audio = null;
-      if (!this.props.isRead) {
-         audio =
-            <audio id={id} controls onEnded={() => {markAsRead([id], () => {this.props.markAsRead(id)})}}>
-               <source src={url} type="audio/mpeg" />
-               <a href={url}> {url} </a>
-            </audio>;
+      const id = this.props.data.id;
+      const title = this.props.data.title;
+      const url = this.props.data.url;
+      var episodeStyle = "episode";
+
+      if (this.props.isSelected) {
+         episodeStyle = "selected-episode " + episodeStyle
+      } else {
+         episodeStyle = "non-selected-episode " + episodeStyle
+      }
+
+      if (this.props.isCurrentEpisode) {
+         episodeStyle = "current-episode " + episodeStyle
+      }
+
+      let readmark = "@{HomeR}/static/img/book.svg";
+      if (!this.props.data.isRead) {
+         readmark = "@{HomeR}/static/img/book-open.svg";
       }
 
       return (
-         <li>
+         <div className={episodeStyle}
+              onDoubleClick={() => this.props.setCurrentEpisode(this.props.data)}
+              onClick={() => this.handleInputChange()}>
             {title}
-            <input
-               name={title}
-               value={id}
-               type="checkbox"
-               checked={this.props.isSelected}
-               onChange={this.handleInputChange} />
-            <br/>
-            {audio}
-         </li>
+            <input type="image" src={readmark} />
+         </div>
+      );
+   }
+}
+
+
+enum ReaderAction {
+   Play,
+   Pause,
+}
+
+
+interface ReaderProperties {
+   currentEpisode: EpisodeData
+   markAsRead: (string) => void
+   readerAction: ReaderAction
+   toggleReaderAction: () => void
+}
+
+
+class Reader extends React.Component<ReaderProperties, {}> {
+
+   render() {
+      let img = "@{HomeR}/static/img/play-circle.svg";
+      const id = this.props.currentEpisode.id;
+      const url = this.props.currentEpisode.url;
+      if (this.props.readerAction === ReaderAction.Play) {
+         img = "@{HomeR}/static/img/pause-circle.svg";
+      }
+      return (
+         <div id="reader">
+            {this.props.currentEpisode.title}
+            <audio id="podcast-reader" onEnded={() => {markAsRead([id], () => {this.props.markAsRead(id)})}}>
+               <source src={url}/>
+               <a href={url}> {url} </a>
+            </audio>
+            <input onClick={this.props.toggleReaderAction} type="image" src={img} />
+         </div>
       );
    }
 }
@@ -146,11 +185,12 @@ class Remove extends React.Component<{}, {}> {
 
 
 interface CollectionProperties {
-   readEpisodes: {[k: string]: boolean};
-   selectedEpisodes: {[k: string]: boolean};
+   readEpisodes: {[k: string]: boolean}
+   selectedEpisodes: {[k: string]: boolean}
    episodes: EpisodeData[]
-   markAsRead: (string) => void
    handleSelection: (boolean, string) => void
+   setCurrentEpisode: (EpisodeData) => void
+   currentEpisode: EpisodeData
 }
 
 
@@ -159,36 +199,41 @@ class EpisodeCollection extends React.Component<CollectionProperties, {}> {
       const episodes = [];
 
       this.props.episodes.forEach((episode) => {
+         var nEpisode = episode;
+         nEpisode.isRead = this.props.readEpisodes[episode.id];
          episodes.push(
             <Episode
-               id = {episode.id}
-               title = {episode.title}
-               url = {episode.url}
-               isRead = {this.props.readEpisodes[episode.id]}
+               data = {nEpisode}
                isSelected = {this.props.selectedEpisodes[episode.id]}
-               markAsRead= {this.props.markAsRead}
-               handleSelection = {this.props.handleSelection} />
+               handleSelection = {this.props.handleSelection}
+               setCurrentEpisode = {this.props.setCurrentEpisode}
+               isCurrentEpisode = {this.props.currentEpisode.id === episode.id}
+            />
          );
       });
 
       return (
          <div>
-            <ul>
-               {episodes}
-            </ul>
+            {episodes}
          </div>
       );
    }
 }
 
 
-interface ActionBarProperties extends TouchProperties, SelectAllProperties {}
+interface ActionBarProperties
+extends ReaderProperties, TouchProperties, SelectAllProperties {}
 
 
 class ActionBar extends React.Component<ActionBarProperties, {}> {
    render() {
       return (
          <div className="action-bar">
+            <Reader markAsRead={this.props.markAsRead}
+                    currentEpisode={this.props.currentEpisode}
+                    toggleReaderAction={this.props.toggleReaderAction}
+                    readerAction={this.props.readerAction}
+                    />
             <SelectAll selectAll={this.props.selectAll} />
             <Read touchSelected={this.props.touchSelected} />
             <Unread touchSelected={this.props.touchSelected} />
@@ -206,29 +251,41 @@ interface PodcastProperties {
 interface PodcastState {
    readEpisodes: {[k: string]: boolean};
    selectedEpisodes: {[k: string]: boolean};
+   currentEpisode: EpisodeData;
+   readerAction: ReaderAction;
 }
 
 class Podcast extends React.Component<PodcastProperties, PodcastState> {
    constructor(props) {
       super(props);
       var readEpisodes = {};
+      var currentEpisode = null;
 
       this.props.episodes.forEach((episode) => {
+         if (currentEpisode === null && !episode.isRead) {
+            currentEpisode = episode;
+         }
+
          readEpisodes[episode.id] = episode.isRead;
       });
 
       this.state = { readEpisodes: readEpisodes,
-                     selectedEpisodes: {}};
+                     selectedEpisodes: {},
+                     readerAction: ReaderAction.Pause,
+                     currentEpisode: currentEpisode};
 
       this.selectAll = this.selectAll.bind(this);
       this.touchEpisodes = this.touchEpisodes.bind(this);
       this.touchSelected = this.touchSelected.bind(this);
       this.handleSelection = this.handleSelection.bind(this);
+      this.setCurrentEpisode = this.setCurrentEpisode.bind(this);
+      this.toggleReaderAction = this.toggleReaderAction.bind(this);
    }
 
    //Change whether an episode is read
    touchEpisodes(b:boolean, ids:string[]) {
       var episodes = this.state.readEpisodes;
+
       ids.forEach((id) => {
          episodes[id] = b;
       });
@@ -274,10 +331,32 @@ class Podcast extends React.Component<PodcastProperties, PodcastState> {
       });
    }
 
+   setCurrentEpisode(episode: EpisodeData) {
+      this.setState({currentEpisode: episode,
+                     readerAction: ReaderAction.Pause});
+      var audio = $("#podcast-reader")[0] as HTMLAudioElement;
+      audio.load();
+   }
+
+   toggleReaderAction() {
+      var audio = $("#podcast-reader")[0] as HTMLAudioElement;
+      if(audio.paused){
+         audio.play();
+         this.setState({readerAction: ReaderAction.Play});
+      } else {
+         audio.pause();
+         this.setState({readerAction: ReaderAction.Pause});
+      }
+   }
+
    render() {
       return (
          <div>
             <ActionBar
+               markAsRead={this.markAsRead}
+               currentEpisode={this.state.currentEpisode}
+               toggleReaderAction={this.toggleReaderAction}
+               readerAction={this.state.readerAction}
                selectAll={this.selectAll}
                touchSelected={this.touchSelected}
             />
@@ -285,8 +364,9 @@ class Podcast extends React.Component<PodcastProperties, PodcastState> {
                selectedEpisodes={this.state.selectedEpisodes}
                readEpisodes={this.state.readEpisodes}
                episodes={this.props.episodes}
-               markAsRead={this.markAsRead}
                handleSelection={this.handleSelection}
+               setCurrentEpisode={this.setCurrentEpisode}
+               currentEpisode={this.state.currentEpisode}
             />
          </div>
       );
