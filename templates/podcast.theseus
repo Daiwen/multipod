@@ -110,13 +110,48 @@ enum ReaderAction {
 
 interface ReaderProperties {
    currentEpisode: EpisodeData
-   markAsRead: (string) => void
+   readOnEnd: (string) => void
    readerAction: ReaderAction
    toggleReaderAction: () => void
 }
 
+interface ReaderState {
+   currentTime: number
+   totalDuration: number
+   isDragging: boolean
+}
 
-class Reader extends React.Component<ReaderProperties, {}> {
+class Reader extends React.Component<ReaderProperties, ReaderState> {
+   constructor(props) {
+      super(props);
+      this.state = { currentTime: 0,
+                     totalDuration: NaN,
+                     isDragging: false};
+
+      this.updateReaderTime = this.updateReaderTime.bind(this);
+      this.applyReaderTime = this.applyReaderTime.bind(this);
+      this.setDragging = this.setDragging.bind(this);
+   }
+
+   updateReaderTime() {
+      if (!this.state.isDragging) {
+         var audio = $("#podcast-reader")[0] as HTMLAudioElement;
+         this.setState({ currentTime: Math.floor(audio.currentTime),
+                         totalDuration: Math.floor(audio.duration) });
+      }
+   }
+
+   setDragging(event){
+      this.setState({ currentTime: event.target.value,
+                      isDragging: true});
+   }
+
+   applyReaderTime(event) {
+      var audio = $("#podcast-reader")[0] as HTMLAudioElement;
+      this.setState({ currentTime: event.target.value,
+                      isDragging: false });
+      audio.currentTime = this.state.currentTime;
+   }
 
    render() {
       let img = "@{HomeR}/static/img/play-circle.svg";
@@ -125,14 +160,24 @@ class Reader extends React.Component<ReaderProperties, {}> {
       if (this.props.readerAction === ReaderAction.Play) {
          img = "@{HomeR}/static/img/pause-circle.svg";
       }
+
       return (
          <div id="reader">
-            {this.props.currentEpisode.title}
-            <audio id="podcast-reader" onEnded={() => {markAsRead([id], () => {this.props.markAsRead(id)})}}>
-               <source src={url}/>
-               <a href={url}> {url} </a>
-            </audio>
-            <input onClick={this.props.toggleReaderAction} type="image" src={img} />
+               {this.props.currentEpisode.title}
+               <input type="range" value={this.state.currentTime}
+                      min={0}
+                      max={this.state.totalDuration}
+                      onChange={this.applyReaderTime}
+                      onInput={this.setDragging}
+                      />
+               <audio id="podcast-reader"
+                      onEnded={() => {markAsRead([id], () => {this.props.readOnEnd(id)})}}
+                      onTimeUpdate={this.updateReaderTime}>
+                  <source src={url}/>
+                  <a href={url}> {url} </a>
+               </audio>
+               {Math.floor(this.state.currentTime)}/{Math.floor(this.state.totalDuration)}
+               <input onClick={this.props.toggleReaderAction} type="image" src={img} />
          </div>
       );
    }
@@ -229,7 +274,7 @@ class ActionBar extends React.Component<ActionBarProperties, {}> {
    render() {
       return (
          <div className="action-bar">
-            <Reader markAsRead={this.props.markAsRead}
+            <Reader readOnEnd={this.props.readOnEnd}
                     currentEpisode={this.props.currentEpisode}
                     toggleReaderAction={this.props.toggleReaderAction}
                     readerAction={this.props.readerAction}
@@ -275,6 +320,7 @@ class Podcast extends React.Component<PodcastProperties, PodcastState> {
                      currentEpisode: currentEpisode};
 
       this.selectAll = this.selectAll.bind(this);
+      this.readOnEnd = this.readOnEnd.bind(this);
       this.touchEpisodes = this.touchEpisodes.bind(this);
       this.touchSelected = this.touchSelected.bind(this);
       this.handleSelection = this.handleSelection.bind(this);
@@ -298,7 +344,8 @@ class Podcast extends React.Component<PodcastProperties, PodcastState> {
       }
    }
 
-   markAsRead(id){
+   readOnEnd(id){
+      this.setState({readerAction: ReaderAction.Pause});
       this.touchEpisodes(true, [id]);
    }
 
@@ -353,7 +400,7 @@ class Podcast extends React.Component<PodcastProperties, PodcastState> {
       return (
          <div>
             <ActionBar
-               markAsRead={this.markAsRead}
+               readOnEnd={this.readOnEnd}
                currentEpisode={this.state.currentEpisode}
                toggleReaderAction={this.toggleReaderAction}
                readerAction={this.state.readerAction}
