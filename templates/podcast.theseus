@@ -111,8 +111,6 @@ enum ReaderAction {
 interface ReaderProperties {
    currentEpisode: EpisodeData
    readOnEnd: (string) => void
-   readerAction: ReaderAction
-   toggleReaderAction: () => void
 }
 
 interface ReaderState {
@@ -154,12 +152,8 @@ class Reader extends React.Component<ReaderProperties, ReaderState> {
    }
 
    render() {
-      let img = "@{HomeR}/static/img/play-circle.svg";
       const id = this.props.currentEpisode.id;
       const url = this.props.currentEpisode.url;
-      if (this.props.readerAction === ReaderAction.Play) {
-         img = "@{HomeR}/static/img/pause-circle.svg";
-      }
 
       return (
          <div id="reader">
@@ -177,12 +171,29 @@ class Reader extends React.Component<ReaderProperties, ReaderState> {
                   <a href={url}> {url} </a>
                </audio>
                {Math.floor(this.state.currentTime)}/{Math.floor(this.state.totalDuration)}
-               <input onClick={this.props.toggleReaderAction} type="image" src={img} />
          </div>
       );
    }
 }
 
+interface PlayPauseProperties {
+   readerAction: ReaderAction
+   toggleReaderAction: () => void
+}
+
+
+class PlayPause extends React.Component<PlayPauseProperties, {}> {
+   render() {
+      let img = "@{HomeR}/static/img/play-circle.svg";
+      if (this.props.readerAction === ReaderAction.Play) {
+         img = "@{HomeR}/static/img/pause-circle.svg";
+      }
+
+      return (
+            <input onClick={this.props.toggleReaderAction} type="image" src={img} />
+      );
+   }
+}
 
 interface SelectAllProperties {
    selectAll: () => void
@@ -267,7 +278,8 @@ class EpisodeCollection extends React.Component<CollectionProperties, {}> {
 
 
 interface ActionBarProperties
-extends ReaderProperties, TouchProperties, SelectAllProperties {}
+extends ReaderProperties, PlayPauseProperties,TouchProperties,
+        SelectAllProperties {}
 
 
 class ActionBar extends React.Component<ActionBarProperties, {}> {
@@ -276,9 +288,10 @@ class ActionBar extends React.Component<ActionBarProperties, {}> {
          <div className="action-bar">
             <Reader readOnEnd={this.props.readOnEnd}
                     currentEpisode={this.props.currentEpisode}
-                    toggleReaderAction={this.props.toggleReaderAction}
-                    readerAction={this.props.readerAction}
                     />
+            <PlayPause toggleReaderAction={this.props.toggleReaderAction}
+                       readerAction={this.props.readerAction}
+                       />
             <SelectAll selectAll={this.props.selectAll} />
             <Read touchSelected={this.props.touchSelected} />
             <Unread touchSelected={this.props.touchSelected} />
