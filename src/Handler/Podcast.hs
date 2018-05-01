@@ -12,12 +12,6 @@ import Text.Julius
 getPodcastR :: String -> Handler Html
 getPodcastR podName =
     defaultLayout $ do
-        addScriptRemote
-            "http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"
-        addScriptRemote
-            "https://unpkg.com/react@16.2.0/umd/react.production.min.js"
-        addScriptRemote
-            "https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"
         setTitle (toHtml podName)
         let name = rawJS podName
         $(widgetFile "podcast")
