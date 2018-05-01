@@ -91,40 +91,13 @@ instance Yesod App
     defaultLayout widget = do
         master <- getYesod
         muser <- maybeAuthPair
-        mcurrentRoute <- getCurrentRoute
         -- Define the menu items of the header.
-        --
+
         let home = HomeR
         let (logInOut, logLabel) = if isNothing muser
             then (AuthR LoginR, rawJS ("Login"::String))
             else (AuthR LogoutR, rawJS ("Logout"::String))
 
-        let menuItems =
-                [ NavbarLeft
-                  MenuItem
-                  { menuItemLabel = "Home"
-                  , menuItemRoute = HomeR
-                  , menuItemAccessCallback = True
-                  }
-                , NavbarRight
-                  MenuItem
-                  { menuItemLabel = "Login"
-                  , menuItemRoute = AuthR LoginR
-                  , menuItemAccessCallback = isNothing muser
-                  }
-                , NavbarRight
-                  MenuItem
-                  { menuItemLabel = "Logout"
-                  , menuItemRoute = AuthR LogoutR
-                  , menuItemAccessCallback = isJust muser
-                  }
-                ]
-        let navbarLeftMenuItems = [x | NavbarLeft x <- menuItems]
-        let navbarRightMenuItems = [x | NavbarRight x <- menuItems]
-        let navbarLeftFilteredMenuItems =
-                [x | x <- navbarLeftMenuItems, menuItemAccessCallback x]
-        let navbarRightFilteredMenuItems =
-                [x | x <- navbarRightMenuItems, menuItemAccessCallback x]
         -- We break up the default layout into two components:
         -- default-layout is the contents of the body tag, and
         -- default-layout-wrapper is the entire page. Since the final

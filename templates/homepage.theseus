@@ -118,7 +118,7 @@ class PodcastCollection extends React.Component<CollectionProperties, {}> {
       });
 
       return (
-         <div className="podcast-collection">
+         <div className="container podcast-collection">
             {podcasts}
          </div>
       );

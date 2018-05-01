@@ -85,3 +85,17 @@
 .header {
   display: flex;
 }
+
+.menu-item {
+  margin: 9.5px 0;
+  padding: 10px 15px;
+}
+
+.menu-item > a {
+  color: #ecf0f1;
+}
+
+.menu-item > a:hover {
+  color: #18bc9c;
+  text-decoration: none;
+}
