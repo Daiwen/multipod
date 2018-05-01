@@ -10,6 +10,7 @@ module Foundation where
 import Database.Persist.Sql (ConnectionPool, runSqlPool)
 import Import.NoFoundation
 import Text.Hamlet (hamletFile)
+import Text.Julius (rawJS)
 import Text.Jasmine (minifym)
 
 -- Used only when in "auth-dummy-login" setting is enabled.
@@ -92,6 +93,12 @@ instance Yesod App
         muser <- maybeAuthPair
         mcurrentRoute <- getCurrentRoute
         -- Define the menu items of the header.
+        --
+        let home = HomeR
+        let (logInOut, logLabel) = if isNothing muser
+            then (AuthR LoginR, rawJS ("Login"::String))
+            else (AuthR LogoutR, rawJS ("Logout"::String))
+
         let menuItems =
                 [ NavbarLeft
                   MenuItem
@@ -126,6 +133,7 @@ instance Yesod App
         pc <-
             widgetToPageContent $ do
                 addStylesheet $ StaticR css_bootstrap_css
+                $(widgetFile "default-layout-early")
                 $(widgetFile "default-layout")
         withUrlRenderer $(hamletFile "templates/default-layout-wrapper.hamlet")
     -- The page to be redirected to when authentication is required.

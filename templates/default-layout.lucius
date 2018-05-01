@@ -81,3 +81,7 @@
   background-color: lightblue;
   margin: auto;
 }
+
+.header {
+  display: flex;
+}

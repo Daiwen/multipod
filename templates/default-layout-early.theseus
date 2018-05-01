@@ -1,0 +1,70 @@
+/// <reference types="node" />
+/// <reference types="jquery" />
+/// <reference types="react" />
+
+interface ActionProperties {
+   actionProperties: any
+}
+
+function getHeader (ActionBar) {
+   return class Header extends React.Component<ActionProperties, {}> {
+      render() {
+         return (
+            <div className="header">
+               <div>
+                  <a href="@{home}">Home</a>
+               </div>
+               <ActionBar
+                  data={this.props.actionProperties} />
+               <div>
+                  <a href="@{logInOut}">{"#{logLabel}"}</a>
+               </div>
+            </div>
+         );
+      }
+   }
+}
+
+interface DefaultProperties extends ActionProperties {
+   appProperties: any;
+}
+
+function appLayout (AppComponent, ActionBar) {
+   return class extends React.Component<DefaultProperties, {}> {
+      render() {
+         const Header = getHeader(ActionBar);
+         return (
+            <div>
+               <Header
+                   actionProperties={this.props.actionProperties}/>
+               <AppComponent
+                   appProperties={this.props.appProperties}/>
+            </div>
+         ); 
+      }
+   };
+}
+
+class Empty extends React.Component<{}, {}> {
+   render() {
+      return (
+         <div>
+         </div>
+      );
+   }
+}
+
+var AppLayout = appLayout(Empty, Empty);
+
+var App = class extends React.Component<{}, {}> {
+   render () {
+      return (
+         <div>
+            <AppLayout
+               actionProperties={{}}
+               appProperties={{}}
+               />
+         </div>
+      );
+   }
+}

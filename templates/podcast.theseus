@@ -2,6 +2,7 @@
 /// <reference types="jquery" />
 /// <reference types="react" />
 
+declare function appLayout(App, Action);
 
 function removePodcast(name : string) {
    var xmlhttp = new XMLHttpRequest();
@@ -249,21 +250,24 @@ interface CollectionProperties {
    currentEpisode: EpisodeData
 }
 
+interface AppProperties {
+   appProperties: CollectionProperties;
+}
 
-class EpisodeCollection extends React.Component<CollectionProperties, {}> {
+class EpisodeCollection extends React.Component<AppProperties, {}> {
    render() {
       const episodes = [];
 
-      this.props.episodes.forEach((episode) => {
+      this.props.appProperties.episodes.forEach((episode) => {
          var nEpisode = episode;
-         nEpisode.isRead = this.props.readEpisodes[episode.id];
+         nEpisode.isRead = this.props.appProperties.readEpisodes[episode.id];
          episodes.push(
             <Episode
                data = {nEpisode}
-               isSelected = {this.props.selectedEpisodes[episode.id]}
-               handleSelection = {this.props.handleSelection}
-               setCurrentEpisode = {this.props.setCurrentEpisode}
-               isCurrentEpisode = {this.props.currentEpisode.id === episode.id}
+               isSelected = {this.props.appProperties.selectedEpisodes[episode.id]}
+               handleSelection = {this.props.appProperties.handleSelection}
+               setCurrentEpisode = {this.props.appProperties.setCurrentEpisode}
+               isCurrentEpisode = {this.props.appProperties.currentEpisode.id === episode.id}
             />
          );
       });
@@ -281,56 +285,71 @@ interface ActionBarProperties
 extends ReaderProperties, PlayPauseProperties,TouchProperties,
         SelectAllProperties {}
 
+interface ActionProperties {
+   data: ActionBarProperties;
+}
 
-class ActionBar extends React.Component<ActionBarProperties, {}> {
+class ActionBar extends React.Component<ActionProperties, {}> {
    render() {
       return (
          <div className="action-bar">
-            <Reader readOnEnd={this.props.readOnEnd}
-                    currentEpisode={this.props.currentEpisode}
+            <Reader readOnEnd={this.props.data.readOnEnd}
+                    currentEpisode={this.props.data.currentEpisode}
                     />
-            <PlayPause toggleReaderAction={this.props.toggleReaderAction}
-                       readerAction={this.props.readerAction}
+            <PlayPause toggleReaderAction={this.props.data.toggleReaderAction}
+                       readerAction={this.props.data.readerAction}
                        />
-            <SelectAll selectAll={this.props.selectAll} />
-            <Read touchSelected={this.props.touchSelected} />
-            <Unread touchSelected={this.props.touchSelected} />
+            <SelectAll selectAll={this.props.data.selectAll} />
+            <Read touchSelected={this.props.data.touchSelected} />
+            <Unread touchSelected={this.props.data.touchSelected} />
             <Remove />
          </div>
       );
    }
 }
 
-
-interface PodcastProperties {
-   episodes: EpisodeData[]
-}
-
 interface PodcastState {
+   episodes: EpisodeData[]
    readEpisodes: {[k: string]: boolean};
    selectedEpisodes: {[k: string]: boolean};
    currentEpisode: EpisodeData;
    readerAction: ReaderAction;
 }
 
-class Podcast extends React.Component<PodcastProperties, PodcastState> {
+var AppLayout = appLayout(EpisodeCollection, ActionBar);
+
+var App = class extends React.Component<{}, PodcastState> {
    constructor(props) {
       super(props);
-      var readEpisodes = {};
-      var currentEpisode = null;
+      var local = this;
 
-      this.props.episodes.forEach((episode) => {
-         if (currentEpisode === null && !episode.isRead) {
-            currentEpisode = episode;
-         }
+      $.getJSON('@{EpisodesR podName}', function (data) {
+          var readEpisodes = {};
+          var currentEpisode = null;
 
-         readEpisodes[episode.id] = episode.isRead;
+          data.forEach((episode) => {
+             if (currentEpisode === null && !episode.isRead) {
+                currentEpisode = episode;
+             }
+
+             readEpisodes[episode.id] = episode.isRead;
+          });
+
+          local.setState({episodes: data,
+                          readEpisodes: readEpisodes,
+                          selectedEpisodes: {},
+                          readerAction: ReaderAction.Pause,
+                          currentEpisode: currentEpisode
+                          });
+
       });
 
-      this.state = { readEpisodes: readEpisodes,
+      this.state = { episodes: [],
+                     readEpisodes: {},
                      selectedEpisodes: {},
                      readerAction: ReaderAction.Pause,
-                     currentEpisode: currentEpisode};
+                     currentEpisode: null
+      }
 
       this.selectAll = this.selectAll.bind(this);
       this.readOnEnd = this.readOnEnd.bind(this);
@@ -386,7 +405,7 @@ class Podcast extends React.Component<PodcastProperties, PodcastState> {
 
    selectAll() {
       var local = this;
-      this.props.episodes.forEach((episode) => {
+      this.state.episodes.forEach((episode) => {
          local.handleSelection(true, episode.id)
       });
    }
@@ -410,33 +429,32 @@ class Podcast extends React.Component<PodcastProperties, PodcastState> {
    }
 
    render() {
-      return (
+      var app = (<div />);
+
+      if (this.state.currentEpisode)
+         app = (
          <div>
-            <ActionBar
-               readOnEnd={this.readOnEnd}
-               currentEpisode={this.state.currentEpisode}
-               toggleReaderAction={this.toggleReaderAction}
-               readerAction={this.state.readerAction}
-               selectAll={this.selectAll}
-               touchSelected={this.touchSelected}
-            />
-            <EpisodeCollection
-               selectedEpisodes={this.state.selectedEpisodes}
-               readEpisodes={this.state.readEpisodes}
-               episodes={this.props.episodes}
-               handleSelection={this.handleSelection}
-               setCurrentEpisode={this.setCurrentEpisode}
-               currentEpisode={this.state.currentEpisode}
-            />
+            <AppLayout
+               actionProperties={{
+                  readOnEnd: this.readOnEnd,
+                  currentEpisode: this.state.currentEpisode,
+                  toggleReaderAction: this.toggleReaderAction,
+                  readerAction: this.state.readerAction,
+                  selectAll: this.selectAll,
+                  touchSelected: this.touchSelected
+               }}
+               appProperties= {{
+                  selectedEpisodes: this.state.selectedEpisodes,
+                  readEpisodes: this.state.readEpisodes,
+                  episodes: this.state.episodes,
+                  handleSelection: this.handleSelection,
+                  setCurrentEpisode: this.setCurrentEpisode,
+                  currentEpisode: this.state.currentEpisode,
+               }}
+               />
          </div>
       );
+
+      return app;
    }
 }
-
-
-$.getJSON('@{EpisodesR podName}', function (data) {
-   ReactDOM.render(
-      <Podcast episodes={data} />,
-      document.getElementById("container")
-   );
-});

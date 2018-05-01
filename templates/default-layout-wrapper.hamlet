@@ -51,6 +51,12 @@ $newline never
   <body>
     ^{pageBody pc}
 
+    <script>
+      ReactDOM.render(
+        React.createElement(App),
+        document.getElementById("container")
+      );
+
     $maybe analytics <- appAnalytics $ appSettings master
       <script>
         if(!window.location.href.match(/localhost/)){

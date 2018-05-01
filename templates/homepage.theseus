@@ -2,6 +2,8 @@
 /// <reference types="jquery" />
 /// <reference types="react" />
 
+declare function appLayout(App, Action);
+
 interface PodcastProperties {
    name: string
    address: string
@@ -28,7 +30,6 @@ interface AddState {
 interface AddPodcastProperties {
    onAddPodcast: () => void
 }
-
 
 class AddPodcast extends React.Component<AddPodcastProperties, AddState> {
    constructor(props) {
@@ -100,11 +101,15 @@ interface PodcatcherState {
    podcasts: PodcastProperties[];
 }
 
-class PodcastCollection extends React.Component<PodcatcherState, {}> {
+interface CollectionProperties {
+   appProperties: PodcatcherState;
+}
+
+class PodcastCollection extends React.Component<CollectionProperties, {}> {
    render() {
       const podcasts = [];
 
-      this.props.podcasts.forEach((podcast) => {
+      this.props.appProperties.podcasts.forEach((podcast) => {
          podcasts.push(
             <Podcast
                address = {podcast.address}
@@ -120,18 +125,24 @@ class PodcastCollection extends React.Component<PodcatcherState, {}> {
    }
 }
 
-class ActionBar extends React.Component<AddPodcastProperties, {}> {
+interface ActionProperties {
+   data: AddPodcastProperties;
+}
+
+class ActionBar extends React.Component<ActionProperties, {}> {
    render() {
       return (
          <div className="action-bar">
-            <AddPodcast onAddPodcast={this.props.onAddPodcast} />
+            <AddPodcast onAddPodcast={this.props.data.onAddPodcast} />
             <RefreshPodcast />
          </div>
       );
    }
 }
 
-class Podcatcher extends React.Component<{}, PodcatcherState> {
+var AppLayout = appLayout(PodcastCollection, ActionBar);
+
+var App = class extends React.Component<{}, PodcatcherState> {
    constructor(props) {
       super(props);
       var local = this;
@@ -158,18 +169,11 @@ class Podcatcher extends React.Component<{}, PodcatcherState> {
    render () {
       return (
          <div>
-            <ActionBar
-               onAddPodcast={this.handleAddPodcast}
-            />
-            <PodcastCollection
-               podcasts={this.state.podcasts}
-            />
+            <AppLayout
+               actionProperties={{onAddPodcast: this.handleAddPodcast}}
+               appProperties={{podcasts: this.state.podcasts}}
+               />
          </div>
       );
    }
 }
-
-ReactDOM.render(
-   <Podcatcher />,
-   document.getElementById("container")
-);
