@@ -95,7 +95,7 @@ class RefreshPodcast extends React.Component<{}, {}> {
 
    handleUpdate() {
       var xmlhttp = new XMLHttpRequest();
-      xmlhttp.open("POST", "@{UpdatePodcastsR}");
+      xmlhttp.open("PUT", "@{UpdatePodcastsR}");
       xmlhttp.send(null);
    }
 

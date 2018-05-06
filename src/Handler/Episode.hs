@@ -21,8 +21,8 @@ touchReadsDB isRead = do
     return ()
 
 
-postReadEpisodesR :: Handler ()
-postReadEpisodesR = touchReadsDB True
+putReadEpisodesR :: Handler ()
+putReadEpisodesR = touchReadsDB True
 
-postUnreadEpisodesR :: Handler ()
-postUnreadEpisodesR = touchReadsDB False
+putUnreadEpisodesR :: Handler ()
+putUnreadEpisodesR = touchReadsDB False

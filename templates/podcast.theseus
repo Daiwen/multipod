@@ -12,7 +12,7 @@ function removePodcast(name : string) {
       }
    };
    var params = "?name=" + name;
-   xmlhttp.open("POST", "@{RemovePodcastR}" + params);
+   xmlhttp.open("DELETE", "@{RemovePodcastR}" + params);
    xmlhttp.send(null);
 }
 
@@ -25,7 +25,7 @@ function markAsRead(ids : string[], callback: () => void) {
       }
    };
    var params = "?ids=" + ids;
-   xmlhttp.open("POST", "@{ReadEpisodesR}" + params);
+   xmlhttp.open("PUT", "@{ReadEpisodesR}" + params);
    xmlhttp.send(null);
 }
 
@@ -38,7 +38,7 @@ function markAsUnread(ids : string[], callback: () => void) {
       }
    };
    var params = "?ids=" + ids;
-   xmlhttp.open("POST", "@{UnreadEpisodesR}" + params);
+   xmlhttp.open("PUT", "@{UnreadEpisodesR}" + params);
    xmlhttp.send(null);
 }
 

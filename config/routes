@@ -6,10 +6,10 @@
 
 / HomeR GET
 /podcast/#String PodcastR GET
-/readEpisodes ReadEpisodesR POST
-/unreadEpisodes UnreadEpisodesR POST
-/removePodcast RemovePodcastR POST
+/readEpisodes ReadEpisodesR PUT
+/unreadEpisodes UnreadEpisodesR PUT
+/removePodcast RemovePodcastR DELETE
 /addPodcast AddPodcastR POST
-/updatePodcasts UpdatePodcastsR POST
+/updatePodcasts UpdatePodcastsR PUT
 /podcasts PodcastsR GET
 /episodes/#String EpisodesR GET

@@ -14,7 +14,7 @@ handleRemovePodcast = do
         Just name -> runDB $ removePodcast $ unpack name
         Nothing -> return ()
 
-postRemovePodcastR :: Handler ()
-postRemovePodcastR = do
+deleteRemovePodcastR :: Handler ()
+deleteRemovePodcastR = do
     handleRemovePodcast
     return ()

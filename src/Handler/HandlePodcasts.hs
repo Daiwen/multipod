@@ -42,8 +42,8 @@ updatePodcasts = do
     return ()
 
 
-postUpdatePodcastsR :: Handler ()
-postUpdatePodcastsR = do
+putUpdatePodcastsR :: Handler ()
+putUpdatePodcastsR = do
     updatePodcasts
     return ()
 
