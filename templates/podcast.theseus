@@ -44,19 +44,19 @@ function markAsUnread(ids : string[], callback: () => void) {
 
 
 interface EpisodeData {
-   id: string
-   title: string
-   url: string
-   isRead: boolean
+   id: string;
+   title: string;
+   url: string;
+   isRead: boolean;
 }
 
 
 interface EpisodeProperties {
-   data: EpisodeData
-   isSelected: boolean
-   handleSelection: (boolean, string) => void
-   setCurrentEpisode: (EpisodeData) => void
-   isCurrentEpisode: boolean
+   data: EpisodeData;
+   isSelected: boolean;
+   handleSelection: (boolean, string) => void;
+   setCurrentEpisode: (EpisodeData) => void;
+   isCurrentEpisode: boolean;
 }
 
 class Episode extends React.Component<EpisodeProperties, {}> {
@@ -77,13 +77,13 @@ class Episode extends React.Component<EpisodeProperties, {}> {
       var episodeStyle = "episode";
 
       if (this.props.isSelected) {
-         episodeStyle = "selected-episode " + episodeStyle
+         episodeStyle = "selected-episode " + episodeStyle;
       } else {
-         episodeStyle = "non-selected-episode " + episodeStyle
+         episodeStyle = "non-selected-episode " + episodeStyle;
       }
 
       if (this.props.isCurrentEpisode) {
-         episodeStyle = "current-episode " + episodeStyle
+         episodeStyle = "current-episode " + episodeStyle;
       }
 
       let readmark = "@{HomeR}/static/img/book.svg";
@@ -110,14 +110,14 @@ enum ReaderAction {
 
 
 interface ReaderProperties {
-   currentEpisode: EpisodeData
-   readOnEnd: (string) => void
+   currentEpisode: EpisodeData;
+   readOnEnd: (string) => void;
 }
 
 interface ReaderState {
-   currentTime: number
-   totalDuration: number
-   isDragging: boolean
+   currentTime: number;
+   totalDuration: number;
+   isDragging: boolean;
 }
 
 class Reader extends React.Component<ReaderProperties, ReaderState> {
@@ -178,8 +178,8 @@ class Reader extends React.Component<ReaderProperties, ReaderState> {
 }
 
 interface PlayPauseProperties {
-   readerAction: ReaderAction
-   toggleReaderAction: () => void
+   readerAction: ReaderAction;
+   toggleReaderAction: () => void;
 }
 
 
@@ -197,7 +197,7 @@ class PlayPause extends React.Component<PlayPauseProperties, {}> {
 }
 
 interface SelectAllProperties {
-   selectAll: () => void
+   selectAll: () => void;
 }
 
 class SelectAll extends React.Component<SelectAllProperties, {}> {
@@ -210,7 +210,7 @@ class SelectAll extends React.Component<SelectAllProperties, {}> {
 
 
 interface TouchProperties {
-   touchSelected: (boolean) => void
+   touchSelected: (boolean) => void;
 }
 
 
@@ -242,12 +242,12 @@ class Remove extends React.Component<{}, {}> {
 
 
 interface CollectionProperties {
-   readEpisodes: {[k: string]: boolean}
-   selectedEpisodes: {[k: string]: boolean}
-   episodes: EpisodeData[]
-   handleSelection: (boolean, string) => void
-   setCurrentEpisode: (EpisodeData) => void
-   currentEpisode: EpisodeData
+   readEpisodes: {[k: string]: boolean};
+   selectedEpisodes: {[k: string]: boolean};
+   episodes: EpisodeData[];
+   handleSelection: (boolean, string) => void;
+   setCurrentEpisode: (EpisodeData) => void;
+   currentEpisode: EpisodeData;
 }
 
 interface AppProperties {
@@ -309,7 +309,7 @@ class ActionBar extends React.Component<ActionProperties, {}> {
 }
 
 interface PodcastState {
-   episodes: EpisodeData[]
+   episodes: EpisodeData[];
    readEpisodes: {[k: string]: boolean};
    selectedEpisodes: {[k: string]: boolean};
    currentEpisode: EpisodeData;
@@ -397,7 +397,7 @@ var App = class extends React.Component<{}, PodcastState> {
 
    //Change whether an episode is selected
    handleSelection(b:boolean, id:string) {
-      var selected = this.state.selectedEpisodes
+      var selected = this.state.selectedEpisodes;
       selected[id] = b;
 
       this.setState({selectedEpisodes: selected});
@@ -406,7 +406,7 @@ var App = class extends React.Component<{}, PodcastState> {
    selectAll() {
       var local = this;
       this.state.episodes.forEach((episode) => {
-         local.handleSelection(true, episode.id)
+         local.handleSelection(true, episode.id);
       });
    }
 

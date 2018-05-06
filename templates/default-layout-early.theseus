@@ -3,7 +3,7 @@
 /// <reference types="react" />
 
 interface ActionProperties {
-   actionProperties: any
+   actionProperties: any;
 }
 
 function getHeader (ActionBar) {
